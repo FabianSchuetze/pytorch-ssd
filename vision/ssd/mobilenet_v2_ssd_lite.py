@@ -53,7 +53,7 @@ def create_mobilenetv2_ssd_lite(
         onnx_compatible=onnx_compatible).features
 
     source_layer_indexes = [
-        GraphPath(14, 'conv', 3),
+        GraphPath(14, 'conv', 1), #1 2with the new indices
         19,
     ]
     extras = ModuleList([
