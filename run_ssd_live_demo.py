@@ -55,6 +55,7 @@ else:
     sys.exit(1)
 
 
+import time
 timer = Timer()
 while True:
     ret, orig_image = cap.read()

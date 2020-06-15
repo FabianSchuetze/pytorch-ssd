@@ -36,69 +36,130 @@ def conv_1x1_bn(inp, oup, use_batch_norm=True, onnx_compatible=False):
             ReLU(inplace=True)
         )
 
+class ConvBNReLU(nn.Sequential):
+    def __init__(
+            self,
+            in_planes,
+            out_planes,
+            kernel_size=3,
+            stride=1,
+            groups=1,
+            padding=None):
+        if padding is None:
+            padding = (kernel_size - 1) // 2
+        super(ConvBNReLU, self).__init__(
+            nn.Conv2d(
+                in_planes,
+                out_planes,
+                kernel_size,
+                stride,
+                padding,
+                groups=groups,
+                bias=False),
+            nn.BatchNorm2d(out_planes, momentum=0.1),
+            # Replace with ReLU
+            nn.ReLU(inplace=False)
+        )
+
 
 class InvertedResidual(nn.Module):
-    def __init__(self, inp, oup, stride, expand_ratio, use_batch_norm=True, onnx_compatible=False):
+    def __init__(self, inp, oup, stride, expand_ratio):
         super(InvertedResidual, self).__init__()
-        ReLU = nn.ReLU if onnx_compatible else nn.ReLU6
-
         self.stride = stride
         assert stride in [1, 2]
 
-        hidden_dim = round(inp * expand_ratio)
+        hidden_dim = int(round(inp * expand_ratio))
         self.use_res_connect = self.stride == 1 and inp == oup
 
-        if expand_ratio == 1:
-            if use_batch_norm:
-                self.conv = nn.Sequential(
-                    # dw
-                    nn.Conv2d(hidden_dim, hidden_dim, 3, stride, 1, groups=hidden_dim, bias=False),
-                    nn.BatchNorm2d(hidden_dim),
-                    ReLU(inplace=True),
-                    # pw-linear
-                    nn.Conv2d(hidden_dim, oup, 1, 1, 0, bias=False),
-                    nn.BatchNorm2d(oup),
-                )
-            else:
-                self.conv = nn.Sequential(
-                    # dw
-                    nn.Conv2d(hidden_dim, hidden_dim, 3, stride, 1, groups=hidden_dim, bias=False),
-                    ReLU(inplace=True),
-                    # pw-linear
-                    nn.Conv2d(hidden_dim, oup, 1, 1, 0, bias=False),
-                )
-        else:
-            if use_batch_norm:
-                self.conv = nn.Sequential(
-                    # pw
-                    nn.Conv2d(inp, hidden_dim, 1, 1, 0, bias=False),
-                    nn.BatchNorm2d(hidden_dim),
-                    ReLU(inplace=True),
-                    # dw
-                    nn.Conv2d(hidden_dim, hidden_dim, 3, stride, 1, groups=hidden_dim, bias=False),
-                    nn.BatchNorm2d(hidden_dim),
-                    ReLU(inplace=True),
-                    # pw-linear
-                    nn.Conv2d(hidden_dim, oup, 1, 1, 0, bias=False),
-                    nn.BatchNorm2d(oup),
-                )
-            else:
-                self.conv = nn.Sequential(
-                    # pw
-                    nn.Conv2d(inp, hidden_dim, 1, 1, 0, bias=False),
-                    ReLU(inplace=True),
-                    # dw
-                    nn.Conv2d(hidden_dim, hidden_dim, 3, stride, 1, groups=hidden_dim, bias=False),
-                    ReLU(inplace=True),
-                    # pw-linear
-                    nn.Conv2d(hidden_dim, oup, 1, 1, 0, bias=False),
-                )
+        layers = []
+        if expand_ratio != 1:
+            # pw
+            layers.append(ConvBNReLU(inp, hidden_dim, kernel_size=1))
+        layers.extend([
+            # dw
+            ConvBNReLU(
+                hidden_dim,
+                hidden_dim,
+                stride=stride,
+                groups=hidden_dim),
+            # pw-linear
+            nn.Conv2d(hidden_dim, oup, 1, 1, 0, bias=False),
+            nn.BatchNorm2d(oup, momentum=0.1),
+        ])
+        self.conv = nn.Sequential(*layers)
+        # Replace torch.add with floatfunctional
+        self.skip_add = nn.quantized.FloatFunctional()
 
     def forward(self, x):
         if self.use_res_connect:
-            return x + self.conv(x)
+            return self.skip_add.add(x, self.conv(x))
         else:
             return self.conv(x)
+
+
+# class InvertedResidual(nn.Module):
+    # def __init__(self, inp, oup, stride, expand_ratio, use_batch_norm=True, onnx_compatible=False):
+        # super(InvertedResidual, self).__init__()
+        # ReLU = nn.ReLU if onnx_compatible else nn.ReLU6
+
+        # self.stride = stride
+        # assert stride in [1, 2]
+
+        # hidden_dim = round(inp * expand_ratio)
+        # self.use_res_connect = self.stride == 1 and inp == oup
+        # breakpoint()
+
+        # if expand_ratio == 1:
+            # if use_batch_norm:
+                # self.conv = nn.Sequential(
+                    # # dw
+                    # nn.Conv2d(hidden_dim, hidden_dim, 3, stride, 1, groups=hidden_dim, bias=False),
+                    # nn.BatchNorm2d(hidden_dim),
+                    # ReLU(inplace=True),
+                    # # pw-linear
+                    # nn.Conv2d(hidden_dim, oup, 1, 1, 0, bias=False),
+                    # nn.BatchNorm2d(oup),
+                # )
+            # else:
+                # self.conv = nn.Sequential(
+                    # # dw
+                    # nn.Conv2d(hidden_dim, hidden_dim, 3, stride, 1, groups=hidden_dim, bias=False),
+                    # ReLU(inplace=True),
+                    # # pw-linear
+                    # nn.Conv2d(hidden_dim, oup, 1, 1, 0, bias=False),
+                # )
+        # else:
+            # if use_batch_norm:
+                # self.conv = nn.Sequential(
+                    # # pw
+                    # nn.Conv2d(inp, hidden_dim, 1, 1, 0, bias=False),
+                    # nn.BatchNorm2d(hidden_dim),
+                    # ReLU(inplace=True),
+                    # # dw
+                    # nn.Conv2d(hidden_dim, hidden_dim, 3, stride, 1, groups=hidden_dim, bias=False),
+                    # nn.BatchNorm2d(hidden_dim),
+                    # ReLU(inplace=True),
+                    # # pw-linear
+                    # nn.Conv2d(hidden_dim, oup, 1, 1, 0, bias=False),
+                    # nn.BatchNorm2d(oup),
+                # )
+            # else:
+                # self.conv = nn.Sequential(
+                    # # pw
+                    # nn.Conv2d(inp, hidden_dim, 1, 1, 0, bias=False),
+                    # ReLU(inplace=True),
+                    # # dw
+                    # nn.Conv2d(hidden_dim, hidden_dim, 3, stride, 1, groups=hidden_dim, bias=False),
+                    # ReLU(inplace=True),
+                    # # pw-linear
+                    # nn.Conv2d(hidden_dim, oup, 1, 1, 0, bias=False),
+                # )
+
+    # def forward(self, x):
+        # if self.use_res_connect:
+            # return x + self.conv(x)
+        # else:
+            # return self.conv(x)
 
 
 class MobileNetV2(nn.Module):
@@ -130,12 +191,14 @@ class MobileNetV2(nn.Module):
             for i in range(n):
                 if i == 0:
                     self.features.append(block(input_channel, output_channel, s,
-                                               expand_ratio=t, use_batch_norm=use_batch_norm,
-                                               onnx_compatible=onnx_compatible))
+                                               expand_ratio=t))
+                                               # use_batch_norm=use_batch_norm,
+                                               # onnx_compatible=onnx_compatible))
                 else:
                     self.features.append(block(input_channel, output_channel, 1,
-                                               expand_ratio=t, use_batch_norm=use_batch_norm,
-                                               onnx_compatible=onnx_compatible))
+                                               expand_ratio=t))
+                                               # use_batch_norm=use_batch_norm,
+                                               # onnx_compatible=onnx_compatible))
                 input_channel = output_channel
         # building last several layers
         self.features.append(conv_1x1_bn(input_channel, self.last_channel,
