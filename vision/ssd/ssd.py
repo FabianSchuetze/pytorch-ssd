@@ -56,6 +56,7 @@ class SSD(nn.Module):
         start_layer_index = 0
         header_index = 0
         for end_layer_index in self.source_layer_indexes:
+            breakpoint()
             if isinstance(end_layer_index, GraphPath):
                 path = end_layer_index
                 end_layer_index = end_layer_index.s0
