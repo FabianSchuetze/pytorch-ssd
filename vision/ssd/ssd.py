@@ -4,6 +4,7 @@ import numpy as np
 from typing import List, Tuple
 import torch.nn.functional as F
 from vision.nn.mobilenet_v2 import InvertedResidual, ConvBNReLU
+from torch.quantization import QuantStub, DeQuantStub
 
 from ..utils import box_utils
 from collections import namedtuple
@@ -34,6 +35,8 @@ class SSD(nn.Module):
         self.regression_headers = regression_headers
         self.is_test = is_test
         self.config = config
+        self.quant= QuantStub()
+        self.dequant = DeQuantStub()
 
         # register layers in source_layer_indexes by adding them to a module
         # list
@@ -51,12 +54,13 @@ class SSD(nn.Module):
 
     def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         # breakpoint()
+        x = self.quant(x)
         confidences = []
         locations = []
         start_layer_index = 0
         header_index = 0
         for end_layer_index in self.source_layer_indexes:
-            breakpoint()
+            # breakpoint()
             if isinstance(end_layer_index, GraphPath):
                 path = end_layer_index
                 end_layer_index = end_layer_index.s0
@@ -100,6 +104,8 @@ class SSD(nn.Module):
 
         confidences = torch.cat(confidences, 1)
         locations = torch.cat(locations, 1)
+        confidences = self.dequant(confidences)
+        locations = self.dequant(locations)
 
         if self.is_test:
             confidences = F.softmax(confidences, dim=2)
