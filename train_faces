@@ -1,0 +1,12 @@
+python train_ssd.py\
+     --dataset_type faces\
+     --datasets ~/data/TS/CrossCalibration/TCLObjectDetectionDatabase/greyscale.xml\
+     --validation_dataset ~/data/TS/CrossCalibration/TCLObjectDetectionDatabase/greyscale.xml\
+     --net mb2-ssd-lite\
+     --scheduler cosine --lr 0.001 --t_max 200\
+     --validation_epochs 25\
+     --num_epochs 50\
+     --batch_size 4\
+     --num_workers 4\
+     --debug_steps 25
+

@@ -234,7 +234,6 @@ if __name__ == '__main__':
     datasets = []
     for dataset_path in args.datasets:
         if args.dataset_type == 'voc':
-            breakpoint()
             dataset = VOCDataset(dataset_path, transform=train_transform,
                                  target_transform=target_transform)
             label_file = os.path.join(
@@ -242,11 +241,11 @@ if __name__ == '__main__':
                 "voc-model-labels.txt")
             store_labels(label_file, dataset.class_names)
             num_classes = len(dataset.class_names)
-        if args.dataset_type == 'faces':
+        elif args.dataset_type == 'faces':
             dataset = FacesDB(dataset_path, target_transform=target_transform)
             label_file = os.path.join(
                 args.checkpoint_folder,
-                "voc-model-labels.txt")
+                "faces-model-labels.txt")
             store_labels(label_file, dataset.class_names)
             num_classes = len(dataset.class_names)
         elif args.dataset_type == 'open_images':
@@ -280,6 +279,10 @@ if __name__ == '__main__':
             transform=test_transform,
             target_transform=target_transform,
             is_test=True)
+    elif args.dataset_type == "faces":
+        val_dataset = FacesDB(
+            args.validation_dataset,
+            target_transform=target_transform)
     elif args.dataset_type == 'open_images':
         val_dataset = OpenImagesDataset(
             dataset_path,

@@ -1,0 +1,10 @@
+python train_ssd.py\
+     --dataset_type voc\
+     --datasets ~/data/VOC2007/VOCdevkit/VOC2007 ~/data/VOC2012/VOCdevkit/VOC2012\
+     --validation_dataset ~/data/VOC2007/VOCdevkit/test/VOC2007\
+     --net mb2-ssd-lite\
+     --scheduler cosine --lr 0.001 --t_max 200\
+     --validation_epochs 5\
+     --num_epochs 10\
+     --batch_size 4\
+     --num_workers 0

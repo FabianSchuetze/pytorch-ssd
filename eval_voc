@@ -1,0 +1,6 @@
+python eval_ssd.py\
+    --dataset_type voc\
+    --net mb2-ssd-lite\
+    --dataset ~/data/VOC2007/VOCdevkit/test/VOC2007\
+    --trained_model models/mb2-ssd-lite-mp-0_686.pth\
+    --label_file models/voc-model-labels.txt

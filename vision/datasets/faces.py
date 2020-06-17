@@ -88,7 +88,8 @@ class FacesDB(data.Dataset):
                 box.append(self._convert_to_box(tag)[i] / scale)
             boxes.append(box)
             labels.append(self._append_label(tag))
-        return np.array(boxes), np.array(labels)
+        return np.array(boxes, dtype=np.float32), \
+                np.array(labels, dtype=np.int64)
 
     def _load_sample(self, idx) -> Tuple[List]:
         sample = self.ids[idx]
@@ -140,11 +141,17 @@ class FacesDB(data.Dataset):
         img = (img / 255).astype(np.float32)
         return img
 
-    # def pull_anno(self, filename: str):
-        # """
-        # Returns the annotation of the image. In contrast to the other images,
-        # this function takes a string as an argument which corresponsed to the
-        # filename
-        # """
-        # img_id = self._filepath_storage[filename]
-        # return self.pull_item(img_id)[1]
+    def get_annotation(self, idx: int):
+        """
+        Returns the annotation of the image
+        """
+        return idx, 
+
+    def pull_anno(self, filename: str):
+        """
+        Returns the annotation of the image. In contrast to the other images,
+        this function takes a string as an argument which corresponsed to the
+        filename
+        """
+        img_id = self._filepath_storage[filename]
+        return self.pull_item(img_id)[1]
