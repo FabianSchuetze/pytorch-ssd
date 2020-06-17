@@ -4,6 +4,7 @@ import cv2
 import pandas as pd
 import copy
 
+
 class OpenImagesDataset:
 
     def __init__(self, root,
@@ -60,13 +61,18 @@ class OpenImagesDataset:
     def _read_data(self):
         annotation_file = f"{self.root}/sub-{self.dataset_type}-annotations-bbox.csv"
         annotations = pd.read_csv(annotation_file)
-        class_names = ['BACKGROUND'] + sorted(list(annotations['ClassName'].unique()))
-        class_dict = {class_name: i for i, class_name in enumerate(class_names)}
+        class_names = ['BACKGROUND'] + \
+            sorted(list(annotations['ClassName'].unique()))
+        class_dict = {
+            class_name: i for i,
+            class_name in enumerate(class_names)}
         data = []
         for image_id, group in annotations.groupby("ImageID"):
-            boxes = group.loc[:, ["XMin", "YMin", "XMax", "YMax"]].values.astype(np.float32)
+            boxes = group.loc[:, ["XMin", "YMin", "XMax",
+                                  "YMax"]].values.astype(np.float32)
             # make labels 64 bits to satisfy the cross_entropy function
-            labels = np.array([class_dict[name] for name in group["ClassName"]], dtype='int64')
+            labels = np.array([class_dict[name]
+                               for name in group["ClassName"]], dtype='int64')
             data.append({
                 'image_id': image_id,
                 'boxes': boxes,
@@ -84,10 +90,11 @@ class OpenImagesDataset:
                 for class_index in example['labels']:
                     class_name = self.class_names[class_index]
                     self.class_stat[class_name] += 1
-        content = ["Dataset Summary:"
-                   f"Number of Images: {len(self.data)}",
-                   f"Minimum Number of Images for a Class: {self.min_image_num}",
-                   "Label Distribution:"]
+        content = [
+            "Dataset Summary:"
+            f"Number of Images: {len(self.data)}",
+            f"Minimum Number of Images for a Class: {self.min_image_num}",
+            "Label Distribution:"]
         for class_name, num in self.class_stat.items():
             content.append(f"\t{class_name}: {num}")
         return "\n".join(content)
@@ -115,8 +122,3 @@ class OpenImagesDataset:
             sample_image_indexes.update(sub)
         sample_data = [self.data[i] for i in sample_image_indexes]
         return sample_data
-
-
-
-
-
