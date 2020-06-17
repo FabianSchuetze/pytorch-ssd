@@ -69,7 +69,8 @@ class FacesDB(data.Dataset):
         label = box.find('label').text
         return self._conversion[label]
 
-    def _load_image(self, sample):
+    def _load_image(self, idx: int):
+        sample = self.ids[idx]
         img = cv2.imread(sample.get('file'))
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         return img
@@ -79,7 +80,8 @@ class FacesDB(data.Dataset):
         img = (img / 255).astype(np.float32)
         return img
 
-    def _load_targets(self, sample, height, width):
+    def _load_targets(self, idx, height, width):
+        sample = self.ids[idx]
         boxes, labels = [], []
         for tag in sample.findall('box'):
             box = []
@@ -92,10 +94,9 @@ class FacesDB(data.Dataset):
                 np.array(labels, dtype=np.int64)
 
     def _load_sample(self, idx) -> Tuple[List]:
-        sample = self.ids[idx]
-        img = self._load_image(sample)
+        img = self._load_image(idx)
         height, width, _ = img.shape
-        boxes, labels = self._load_targets(sample, height, width)
+        boxes, labels = self._load_targets(idx, height, width)
         return img, boxes, labels
 
     def _random_augmentation(self, img, target):
@@ -145,13 +146,27 @@ class FacesDB(data.Dataset):
         """
         Returns the annotation of the image
         """
-        return idx, 
+        sample = self.ids[idx]
+        boxes, labels = [], []
+        for tag in sample.findall('box'):
+            box = []
+            for i in range(4):
+                box.append(self._convert_to_box(tag)[i])
+            boxes.append(box)
+            labels.append(self._append_label(tag))
+        difficult = np.zeros_like(labels, dtype=np.uint8)
+        return idx, (np.array(boxes, dtype=np.float32), \
+                    np.array(labels, dtype=np.int64), difficult)
 
-    def pull_anno(self, filename: str):
-        """
-        Returns the annotation of the image. In contrast to the other images,
-        this function takes a string as an argument which corresponsed to the
-        filename
-        """
-        img_id = self._filepath_storage[filename]
-        return self.pull_item(img_id)[1]
+    def get_image(self, idx: int):
+        img = self._load_image(idx)
+        return img
+
+    # def pull_anno(self, filename: str):
+        # """
+        # Returns the annotation of the image. In contrast to the other images,
+        # this function takes a string as an argument which corresponsed to the
+        # filename
+        # """
+        # img_id = self._filepath_storage[filename]
+        # return self.pull_item(img_id)[1]
