@@ -17,6 +17,7 @@ from vision.ssd.mobilenet_v2_ssd_lite import create_mobilenetv2_ssd_lite
 from vision.ssd.squeezenet_ssd_lite import create_squeezenet_ssd_lite
 from vision.datasets.voc_dataset import VOCDataset
 from vision.datasets.open_images import OpenImagesDataset
+from vision.datasets.faces import FacesDB
 from vision.nn.multibox_loss import MultiboxLoss
 from vision.ssd.config import vgg_ssd_config
 from vision.ssd.config import mobilenetv1_ssd_config
@@ -233,8 +234,16 @@ if __name__ == '__main__':
     datasets = []
     for dataset_path in args.datasets:
         if args.dataset_type == 'voc':
+            breakpoint()
             dataset = VOCDataset(dataset_path, transform=train_transform,
                                  target_transform=target_transform)
+            label_file = os.path.join(
+                args.checkpoint_folder,
+                "voc-model-labels.txt")
+            store_labels(label_file, dataset.class_names)
+            num_classes = len(dataset.class_names)
+        if args.dataset_type == 'faces':
+            dataset = FacesDB(dataset_path, target_transform=target_transform)
             label_file = os.path.join(
                 args.checkpoint_folder,
                 "voc-model-labels.txt")
