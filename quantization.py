@@ -25,11 +25,13 @@ def test(loader, net, device, max_iter=None):
     # running_classification_loss = 0.0
     num, n_images = 0, 0
     total = 0.
-    for iteration, data in enumerate(loader):
-        images, boxes, labels = data
+    for i in range(len(loader)):
+    # for iteration, data in enumerate(loader):
+        images, boxes, labels = loader[i]
+        images = images.unsqueeze(0)
         images = images.to(device)
-        boxes = boxes.to(device)
-        labels = labels.to(device)
+        # boxes = boxes.to(device)
+        # labels = labels.to(device)
         num += 1
         n_images += images.size(0)
         with torch.no_grad():
@@ -133,6 +135,6 @@ if __name__ == "__main__":
     # NUM_CLASSES = [name.strip() for name in open(ARGS.label_file).readlines()]
     NET = load_net(ARGS, DEVICE)
     print_model_size("Full Model", NET)
-    compare_quantization(DATALOADER, NET)
+    compare_quantization(DATASET, NET)
     # cpu_loss, quant_loss = compare_quantization(DATASET, NET, CRITERION)
     print_model_size("Full Model", NET)
