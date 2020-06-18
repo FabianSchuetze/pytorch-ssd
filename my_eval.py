@@ -76,10 +76,8 @@ def parse_args():
     parser = argparse.ArgumentParser(
         description="SSD Evaluation on VOC Dataset.")
     parser.add_argument("--trained_model", type=str)
-    parser.add_argument(
-        "--dataset",
-        type=str,
-        help="The root directory of the VOC dataset or Open Images dataset.")
+    parser.add_argument("--dataset", type=str,
+                        help="The root directory of the dataset")
     parser.add_argument("--label_file", type=str, help="The label file path.")
     parser.add_argument("--use_cuda", type=str2bool, default=True)
     parser.add_argument("--use_2007_metric", type=str2bool, default=True)
@@ -117,24 +115,44 @@ def load_net(args, device):
         do_transform=args.do_transform)
     return predictor
 
+def obtain_results(args, device, dataset, predictor):
+    """
+    Retursn pred and gts
+    """
+    predictor = load_net(args, device)
+    predictions, gts = [], []
+    total_time = 0
+    for i in range(len(dataset)):
+        print("process image", i)
+        image, gt_boxes, gt_labels = dataset[i]
+        begin = time.time()
+        boxes, labels, probs = predictor.predict(image)
+        total_time += time.time() - begin
+        predictions.append({'boxes': boxes, 'labels':labels,
+                            'scores':probs})
+        gts.append({'boxes':gt_boxes, 'labels':gt_labels})
+    print("The were %i images passed, in %.2f second, FPS, %.2f"\
+            %(len(dataset), total_time, len(dataset) / total_time))
+    return predictions, gts
+
 
 if __name__ == '__main__':
     ARGS = parse_args()
     DEVICE = torch.device("cpu")
     DATASET = FacesDB(ARGS.dataset)
     PREDICTOR = load_net(ARGS, DEVICE)
-    PREDICTIONS, GTS = [], []
-    TOTAL_TIME = 0
-    for i in range(len(DATASET)):
-        print("process image", i)
-        image, gt_boxes, gt_labels = DATASET[i]
-        begin = time.time()
-        boxes, labels, probs = PREDICTOR.predict(image)
-        TOTAL_TIME += time.time() - begin
-        PREDICTIONS.append({'boxes': boxes, 'labels':labels,
-                            'scores':probs})
-        GTS.append({'boxes':gt_boxes, 'labels':gt_labels})
-    print("The were %i images passed, in %.2f second, FPS, %.2f"\
-            %(len(DATASET), TOTAL_TIME, len(DATASET) / TOTAL_TIME))
+    PREDICTIONS, GTS = obtain_results(ARGS, DEVICE, DATASET, PREDICTOR)
+    # TOTAL_TIME = 0
+    # for i in range(len(DATASET)):
+        # print("process image", i)
+        # image, gt_boxes, gt_labels = DATASET[i]
+        # begin = time.time()
+        # boxes, labels, probs = PREDICTOR.predict(image)
+        # TOTAL_TIME += time.time() - begin
+        # PREDICTIONS.append({'boxes': boxes, 'labels':labels,
+                            # 'scores':probs})
+        # GTS.append({'boxes':gt_boxes, 'labels':gt_labels})
+    # print("The were %i images passed, in %.2f second, FPS, %.2f"\
+            # %(len(DATASET), TOTAL_TIME, len(DATASET) / TOTAL_TIME))
     RES = eval_boxes(PREDICTIONS, GTS)[0]
     print(RES['coco_eval'].__str__())

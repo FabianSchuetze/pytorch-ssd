@@ -7,11 +7,13 @@ import os
 import torch
 from torch.utils.data import DataLoader
 from vision.ssd.ssd import MatchPrior
-from vision.ssd.mobilenet_v2_ssd_lite import create_mobilenetv2_ssd_lite
-from vision.datasets.voc_dataset import VOCDataset
-from vision.ssd.data_preprocessing import TestTransform
+from vision.ssd.mobilenet_v2_ssd_lite import create_mobilenetv2_ssd_lite,\
+    create_mobilenetv2_ssd_lite_predictor
+from vision.datasets.faces import FacesDB
+# from vision.ssd.data_preprocessing import TestTransform
 from vision.ssd.config import mobilenetv1_ssd_config
 from vision.nn.multibox_loss import MultiboxLoss
+from my_eval import obtain_results, parse_args
 
 def test(loader, net, criterion, device, max_iter=None):
     net.eval()
@@ -48,25 +50,6 @@ def test(loader, net, criterion, device, max_iter=None):
         num, running_classification_loss / num
 
 
-def parse_args():
-    parser = argparse.ArgumentParser(
-        description='Single Shot MultiBox Detector Training With Pytorch')
-    parser.add_argument(
-        '--resume',
-        default=None,
-        type=str,
-        help='Checkpoint state_dict file to resume training from')
-    parser.add_argument('--validation_dataset', help='Dataset directory path')
-    parser.add_argument('--batch_size', default=2, type=int,
-                        help='Batch size for training')
-    parser.add_argument('--num_workers', default=4, type=int,
-                    help='Number of workers used in dataloading')
-    parser.add_argument('--mb2_width_mult', default=1.0, type=float,
-                    help='Width Multiplifier for MobilenetV2')
-    args = parser.parse_args()
-    return args
-
-
 def load_model(args, num_classes, device):
     def create_net(num): return create_mobilenetv2_ssd_lite(
         num, width_mult=args.mb2_width_mult)
@@ -94,20 +77,41 @@ def prepare_data(config, args):
     return dataloader, num_classes
 
 
-def compare_quantization(dataset, net, criterion):
+def compare_quantization(dataset, net, args):
     """
     Quantized vs real model
     """
+    # breakpoint()
     net.eval()
     device = torch.device("cpu")
-    cpu_losses = test(dataset, net, criterion, device, 100)
-    net.fuse_model()
-    net.qconfig = torch.quantization.get_default_qat_qconfig('fbgemm')
-    torch.quantization.prepare(net, inplace=True)
-    test(dataset, net, criterion, device, 100)
-    torch.quantization.convert(net, inplace=True)
-    quant_loss = test(dataset, net, criterion, device, 100)
-    return cpu_losses, quant_loss
+    predictor = create_mobilenetv2_ssd_lite_predictor(
+        net, nms_method=args.nms_method, device=device,
+        do_transform=args.do_transform)
+    results = obtain_results(args, device, dataset, predictor)
+    # cpu_losses = test(dataset, net, criterion, device, 100)
+    predictor.net.fuse_model()
+    predictor.net.qconfig = torch.quantization.get_default_qat_qconfig('fbgemm')
+    torch.quantization.prepare(predictor.net, inplace=True)
+    obtain_results(args, device, dataset, predictor)
+    torch.quantization.convert(predictor.net, inplace=True)
+    quantized_results = obtain_results(args, device, dataset, predictor)
+    return results, quantized_results
+
+def load_net(args, device):
+    """
+    Preparese the network
+    """
+    class_names = [name.strip() for name in open(args.label_file).readlines()]
+    net = create_mobilenetv2_ssd_lite(len(class_names),
+                                      width_mult=args.mb2_width_mult,
+                                      is_test=True)
+    net.load(args.trained_model)
+    net = net.to(device)
+    return net
+    # predictor = create_mobilenetv2_ssd_lite_predictor(
+        # net, nms_method=args.nms_method, device=device,
+        # do_transform=args.do_transform)
+    # return predictor
 
 def print_model_size(name, net):
     torch.save(net.state_dict(), "temp.p")
@@ -117,18 +121,15 @@ def print_model_size(name, net):
 
 
 if __name__ == "__main__":
+    # breakpoint()
     ARGS = parse_args()
     CONFIG = mobilenetv1_ssd_config
     DEVICE = torch.device("cpu")
-    DATASET, NUM_CLASSES = prepare_data(CONFIG, ARGS)
-    NET = load_model(ARGS, NUM_CLASSES, DEVICE)
+    DATASET = FacesDB(ARGS.dataset)
+    # DATASET, NUM_CLASSES = prepare_data(CONFIG, ARGS)
+    # NUM_CLASSES = [name.strip() for name in open(ARGS.label_file).readlines()]
+    NET = load_net(ARGS, DEVICE)
     print_model_size("Full Model", NET)
-    CRITERION = MultiboxLoss(
-        CONFIG.priors,
-        iou_threshold=0.5,
-        neg_pos_ratio=3,
-        center_variance=0.1,
-        size_variance=0.2,
-        device=DEVICE)
-    cpu_loss, quant_loss = compare_quantization(DATASET, NET, CRITERION)
+    RES, QUANTIZED_RES = compare_quantization(DATASET, NET, ARGS)
+    # cpu_loss, quant_loss = compare_quantization(DATASET, NET, CRITERION)
     print_model_size("Full Model", NET)

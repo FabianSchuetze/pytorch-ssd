@@ -1,5 +1,4 @@
-python my_eval.py\
+python quantization.py\
     --dataset ~/data/TS/CrossCalibration/TCLObjectDetectionDatabase/greyscale.xml\
     --trained_model models/mb2-ssd-lite-Epoch-49-Loss-0.6577389442695761.pth\
     --label_file models/faces-model-labels.txt
-

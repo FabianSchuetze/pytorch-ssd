@@ -35,7 +35,7 @@ class Predictor:
                 "cuda:0" if torch.cuda.is_available() else "cpu")
 
         self.net.to(self.device)
-        self.net.eval()
+        self.net.eval() #DANGEROUS
 
         self.timer = Timer()
 
