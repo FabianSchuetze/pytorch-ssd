@@ -15,11 +15,14 @@ from vision.ssd.config import mobilenetv1_ssd_config
 from vision.nn.multibox_loss import MultiboxLoss
 from my_eval import obtain_results, parse_args
 
-def test(loader, net, criterion, device, max_iter=None):
+def test(loader, net, device, max_iter=None):
     net.eval()
-    running_loss = 0.0
-    running_regression_loss = 0.0
-    running_classification_loss = 0.0
+    # # predictor = create_mobilenetv2_ssd_lite_predictor(
+        # # net, nms_method=args.nms_method, device=device,
+        # # do_transform=args.do_transform)
+    # running_loss = 0.0
+    # running_regression_loss = 0.0
+    # running_classification_loss = 0.0
     num, n_images = 0, 0
     total = 0.
     for iteration, data in enumerate(loader):
@@ -29,25 +32,24 @@ def test(loader, net, criterion, device, max_iter=None):
         labels = labels.to(device)
         num += 1
         n_images += images.size(0)
-
         with torch.no_grad():
             begin = time.time()
             confidence, locations = net(images)
             end = time.time()
             total += end - begin
-            regression_loss, classification_loss = criterion(
-                confidence, locations, labels, boxes)
-            loss = regression_loss + classification_loss
-        running_loss += loss.item()
-        running_regression_loss += regression_loss.item()
-        running_classification_loss += classification_loss.item()
+            # regression_loss, classification_loss = criterion(
+                # confidence, locations, labels, boxes)
+            # loss = regression_loss + classification_loss
+        # running_loss += loss.item()
+        # running_regression_loss += regression_loss.item()
+        # running_classification_loss += classification_loss.item()
         if max_iter is not None:
             if iteration > max_iter:
                 break
     print("Images %i, Total time: %.3f, FPS  %.3f"\
             %(n_images, total, n_images / total))
-    return running_loss / num, running_regression_loss / \
-        num, running_classification_loss / num
+    # return running_loss / num, running_regression_loss / \
+        # num, running_classification_loss / num
 
 
 def load_model(args, num_classes, device):
@@ -77,25 +79,23 @@ def prepare_data(config, args):
     return dataloader, num_classes
 
 
-def compare_quantization(dataset, net, args):
+def compare_quantization(dataset, net):
     """
     Quantized vs real model
     """
-    # breakpoint()
+    breakpoint()
     net.eval()
     device = torch.device("cpu")
-    predictor = create_mobilenetv2_ssd_lite_predictor(
-        net, nms_method=args.nms_method, device=device,
-        do_transform=args.do_transform)
-    results = obtain_results(args, device, dataset, predictor)
+    test(dataset, net, device)
     # cpu_losses = test(dataset, net, criterion, device, 100)
-    predictor.net.fuse_model()
-    predictor.net.qconfig = torch.quantization.get_default_qat_qconfig('fbgemm')
-    torch.quantization.prepare(predictor.net, inplace=True)
-    obtain_results(args, device, dataset, predictor)
-    torch.quantization.convert(predictor.net, inplace=True)
-    quantized_results = obtain_results(args, device, dataset, predictor)
-    return results, quantized_results
+    net.fuse_model()
+    net.qconfig = torch.quantization.get_default_qat_qconfig('fbgemm')
+    torch.quantization.prepare(net, inplace=True)
+    net.eval()
+    test(dataset, net, device)
+    # obtain_results(args, device, dataset, predictor)
+    torch.quantization.convert(net, inplace=True)
+    test(dataset, net, device)
 
 def load_net(args, device):
     """
@@ -126,10 +126,13 @@ if __name__ == "__main__":
     CONFIG = mobilenetv1_ssd_config
     DEVICE = torch.device("cpu")
     DATASET = FacesDB(ARGS.dataset)
+    DATALOADER = DataLoader(DATASET, ARGS.batch_size,
+                            num_workers=ARGS.num_workers,
+                            shuffle=False, drop_last=True)
     # DATASET, NUM_CLASSES = prepare_data(CONFIG, ARGS)
     # NUM_CLASSES = [name.strip() for name in open(ARGS.label_file).readlines()]
     NET = load_net(ARGS, DEVICE)
     print_model_size("Full Model", NET)
-    RES, QUANTIZED_RES = compare_quantization(DATASET, NET, ARGS)
+    compare_quantization(DATALOADER, NET)
     # cpu_loss, quant_loss = compare_quantization(DATASET, NET, CRITERION)
     print_model_size("Full Model", NET)
