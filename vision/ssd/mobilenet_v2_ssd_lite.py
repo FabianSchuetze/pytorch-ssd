@@ -152,12 +152,14 @@ def create_mobilenetv2_ssd_lite_predictor(
         candidate_size=200,
         nms_method=None,
         sigma=0.5,
-        device=torch.device('cpu')):
+        device=torch.device('cpu'),
+        do_transform=True):
     predictor = Predictor(net, config.image_size, config.image_mean,
                           config.image_std,
                           nms_method=nms_method,
                           iou_threshold=config.iou_threshold,
                           candidate_size=candidate_size,
                           sigma=sigma,
-                          device=device)
+                          device=device,
+                          do_transform=do_transform)
     return predictor

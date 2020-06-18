@@ -159,7 +159,12 @@ class FacesDB(data.Dataset):
                     np.array(labels, dtype=np.int64), difficult)
 
     def get_image(self, idx: int):
+        """
+        Converts the image so that it can be used for prediction
+        """
         img = self._load_image(idx)
+        img = self._resize_img(img)
+        img = torch.from_numpy(img.transpose(2, 0, 1))
         return img
 
     # def pull_anno(self, filename: str):

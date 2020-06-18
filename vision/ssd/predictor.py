@@ -17,13 +17,15 @@ class Predictor:
             filter_threshold=0.01,
             candidate_size=200,
             sigma=0.5,
-            device=None):
+            device=None,
+            do_transform=True):
         self.net = net
         self.transform = PredictionTransform(size, mean, std)
         self.iou_threshold = iou_threshold
         self.filter_threshold = filter_threshold
         self.candidate_size = candidate_size
         self.nms_method = nms_method
+        self._do_transform = do_transform
 
         self.sigma = sigma
         if device:
@@ -39,8 +41,11 @@ class Predictor:
 
     def predict(self, image, top_k=-1, prob_threshold=None):
         cpu_device = torch.device("cpu")
-        height, width, _ = image.shape
-        image = self.transform(image)
+        if self._do_transform:
+            height, width, _ = image.shape
+            image = self.transform(image)
+        else:
+            _, height, width = image.shape
         images = image.unsqueeze(0)
         images = images.to(self.device)
         with torch.no_grad():
@@ -74,6 +79,7 @@ class Predictor:
             picked_labels.extend([class_index] * box_probs.size(0))
         if not picked_box_probs:
             return torch.tensor([]), torch.tensor([]), torch.tensor([])
+        # breakpoint()
         picked_box_probs = torch.cat(picked_box_probs)
         picked_box_probs[:, 0] *= width
         picked_box_probs[:, 1] *= height

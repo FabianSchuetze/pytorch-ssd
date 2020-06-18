@@ -1,6 +1,4 @@
-python eval_ssd.py\
-    --dataset_type faces\
-    --net mb2-ssd-lite\
+python my_eval.py\
     --dataset ~/data/TS/CrossCalibration/TCLObjectDetectionDatabase/greyscale.xml\
     --trained_model models/mb2-ssd-lite-Epoch-49-Loss-0.6577389442695761.pth\
     --label_file models/faces-model-labels.txt
