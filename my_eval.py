@@ -53,7 +53,7 @@ def eval_boxes(predictions, gts):
     assert len(predictions) == len(gts), "Preds and gts must have sam len"
     pred_boxes, pred_labels, pred_scores = [], [], []
     gt_boxes, gt_labels = [], []
-    breakpoint()
+    # breakpoint()
     for pred, gt in zip(predictions, gts):
         if len(pred['boxes']) > 0:
             pred_boxes.append(_convert_box(pred['boxes']))
@@ -62,7 +62,7 @@ def eval_boxes(predictions, gts):
             gt_box = convert_gt_box(gt['boxes'])
             gt_boxes.append(gt_box)
             gt_labels.append(gt['labels'].astype(np.int32))
-    breakpoint()
+    # breakpoint()
     res = eval_detection_coco(pred_boxes, pred_labels, pred_scores,
                               gt_boxes, gt_labels)
     return res, gt_labels, pred_labels
@@ -82,6 +82,8 @@ def parse_args():
     parser.add_argument("--use_cuda", type=str2bool, default=True)
     parser.add_argument("--use_2007_metric", type=str2bool, default=True)
     parser.add_argument("--nms_method", type=str, default="hard")
+    parser.add_argument("--batch_size", type=int, default=1)
+    parser.add_argument("--num_workers", type=int, default=4)
     parser.add_argument(
         "--iou_threshold",
         type=float,

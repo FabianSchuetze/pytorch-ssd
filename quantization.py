@@ -13,13 +13,34 @@ from vision.datasets.faces import FacesDB
 # from vision.ssd.data_preprocessing import TestTransform
 from vision.ssd.config import mobilenetv1_ssd_config
 from vision.nn.multibox_loss import MultiboxLoss
-from my_eval import obtain_results, parse_args
+from my_eval import parse_args, eval_boxes
+
+def obtain_results(dataset, net, device, args):
+    """
+    Retursn pred and gts
+    """
+    net.eval()
+    predictor = create_mobilenetv2_ssd_lite_predictor(
+        net, nms_method=args.nms_method, device=device,
+        do_transform=args.do_transform)
+    # predictor = load_net(args, device)
+    predictions, gts = [], []
+    total_time = 0
+    for i in range(len(dataset)):
+        # print("process image", i)
+        image, gt_boxes, gt_labels = dataset[i]
+        begin = time.time()
+        boxes, labels, probs = predictor.predict(image)
+        total_time += time.time() - begin
+        predictions.append({'boxes': boxes, 'labels':labels,
+                            'scores':probs})
+        gts.append({'boxes':gt_boxes, 'labels':gt_labels})
+    print("The were %i images passed, in %.2f second, FPS, %.2f"\
+            %(len(dataset), total_time, len(dataset) / total_time))
+    return predictions, gts
 
 def test(loader, net, device, max_iter=None):
     net.eval()
-    # # predictor = create_mobilenetv2_ssd_lite_predictor(
-        # # net, nms_method=args.nms_method, device=device,
-        # # do_transform=args.do_transform)
     # running_loss = 0.0
     # running_regression_loss = 0.0
     # running_classification_loss = 0.0
@@ -81,23 +102,26 @@ def prepare_data(config, args):
     return dataloader, num_classes
 
 
-def compare_quantization(dataset, net):
+def compare_quantization(dataset, net, args):
     """
     Quantized vs real model
     """
     breakpoint()
     net.eval()
     device = torch.device("cpu")
-    test(dataset, net, device)
+    res = obtain_results(dataset, net, device, args)
+    print(eval_boxes(res[0], res[1])[0]['coco_eval'].__str__())
     # cpu_losses = test(dataset, net, criterion, device, 100)
     net.fuse_model()
     net.qconfig = torch.quantization.get_default_qat_qconfig('fbgemm')
     torch.quantization.prepare(net, inplace=True)
     net.eval()
-    test(dataset, net, device)
+    obtain_results(dataset, net, device, args)
     # obtain_results(args, device, dataset, predictor)
     torch.quantization.convert(net, inplace=True)
-    test(dataset, net, device)
+    quant_res = obtain_results(dataset, net, device, args)
+    print(eval_boxes(quant_res[0], quant_res[1])[0]['coco_eval'].__str__())
+    return res, quant_res
 
 def load_net(args, device):
     """
@@ -135,6 +159,6 @@ if __name__ == "__main__":
     # NUM_CLASSES = [name.strip() for name in open(ARGS.label_file).readlines()]
     NET = load_net(ARGS, DEVICE)
     print_model_size("Full Model", NET)
-    compare_quantization(DATASET, NET)
+    RES, QUANT_RES = compare_quantization(DATASET, NET, ARGS)
     # cpu_loss, quant_loss = compare_quantization(DATASET, NET, CRITERION)
     print_model_size("Full Model", NET)
