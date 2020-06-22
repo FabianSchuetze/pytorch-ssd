@@ -44,22 +44,10 @@ void PostProcessing::print_arguments() {
               << std::endl;
 }
 
-Tensor PostProcessing::decode(const Tensor& loc, const Tensor& priors) {
-    Tensor left = priors.slice(1, 0, 2) +
-                  loc.slice(1, 0, 2) * _variances[0] * priors.slice(1, 2);
-    Tensor right =
-        priors.slice(1, 2) * torch::exp(loc.slice(1, 2) * _variances[1]);
-    Tensor boxes = torch::cat({left, right}, 1);
-    boxes.slice(1, 0, 2) -= boxes.slice(1, 2) / 2;
-    boxes.slice(1, 2) += boxes.slice(1, 0, 2);
-    return boxes;
-}
-
 landmarks PostProcessing::process(const Tensor& confidence, 
                                   const Tensor& localization,
                                   const std::pair<float, float>& img_size) {
     std::vector<PostProcessing::Landmark> results;
-    //std::cout << confidence << std::endl;
     Tensor loc = localization.squeeze(0);
     Tensor conf = confidence.squeeze(0);
     for (int i = 1; i < _num_classes; ++i) {
@@ -93,7 +81,7 @@ void PostProcessing::convert(int label, const Tensor& scores, const Tensor& boxe
         l.xmax = xmax;
         l.ymax = ymax;
         l.confidence = scores[i].item<float>();
-
+        l.label = label;
         results.push_back(l);
     }
 }

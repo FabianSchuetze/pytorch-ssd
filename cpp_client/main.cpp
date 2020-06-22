@@ -67,14 +67,15 @@ int main(int argc, const char* argv[]) {
         "/home/fabian/Documents/work/github/ssd.pytorch/cpp_client/params.txt";
     // std::string path =
     //"/home/fabian/data/TS/CrossCalibration/ImageTCL/test/";
-     std::string path = "/home/fabian/data/grayscale/";
-     std::vector<std::string> files = load_images(path);
+    std::string path =
+        "/home/fabian/data/TS/CrossCalibration/ImageTCL/greyscale";
+    std::vector<std::string> files = load_images(path);
     PostProcessing detection(config);
     PreProcessing preprocess(config);
     std::vector<torch::jit::IValue> inputs(1);
-    //std::vector<std::string> files = {
-        //"/home/fabian/data/TS/CrossCalibration/ImageTCL/greyscale/"
-        //"2000-01-01_109790322_121528_PCL_003754.png"};
+    // std::vector<std::string> files = {
+    //"/home/fabian/data/TS/CrossCalibration/ImageTCL/greyscale/"
+    //"2000-01-01_109790322_121528_PCL_003754.png"};
     for (const std::string& img : files) {
         cv::Mat image;
         try {
@@ -88,7 +89,7 @@ int main(int argc, const char* argv[]) {
         int width = image.size().width;
         std::pair<float, float> size = std::make_pair(height, width);
         torch::Tensor tensor_image = preprocess.process(image);
-        //std::cout << tensor_image.slice({1, 1, } << std::endl;
+        // std::cout << tensor_image.slice({1, 1, } << std::endl;
 
         torch::Device device(torch::kCPU);
         module.to(device);

@@ -142,7 +142,7 @@ class FacesDB(data.Dataset):
         img = (img / 255).astype(np.float32)
         return img
 
-    def get_annotation(self, idx: int):
+    def get_annotation(self, idx: int, height: int, width: int):
         """
         Returns the annotation of the image
         """
@@ -151,7 +151,8 @@ class FacesDB(data.Dataset):
         for tag in sample.findall('box'):
             box = []
             for i in range(4):
-                box.append(self._convert_to_box(tag)[i])
+                scale = width if i %2 == 0 else height
+                box.append(self._convert_to_box(tag)[i] * 300 / scale )
             boxes.append(box)
             labels.append(self._append_label(tag))
         difficult = np.zeros_like(labels, dtype=np.uint8)
@@ -167,11 +168,13 @@ class FacesDB(data.Dataset):
         img = torch.from_numpy(img.transpose(2, 0, 1))
         return img
 
-    # def pull_anno(self, filename: str):
-        # """
-        # Returns the annotation of the image. In contrast to the other images,
-        # this function takes a string as an argument which corresponsed to the
-        # filename
-        # """
-        # img_id = self._filepath_storage[filename]
-        # return self.pull_item(img_id)[1]
+    def pull_anno(self, filename: str):
+        """
+        Returns the annotation of the image. In contrast to the other images,
+        this function takes a string as an argument which corresponsed to the
+        filename
+        """
+        img_id = self._filepath_storage[filename]
+        img = self._load_image(img_id)
+        height, width, _ = img.shape
+        return self.get_annotation(img_id, height, width)[1]
