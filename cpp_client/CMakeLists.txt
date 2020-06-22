@@ -13,10 +13,12 @@ include_directories(${PYTHON_INCLUDE_DIRS})
 set(${LIBRARY_TARGET_NAME}_SRC
     PostProcessing.cpp
     PreProcessing.cpp
+    TS_SSDLiteCaller.cpp
 )
 
 set(${LIBRARY_TARGET_NAME}_HDR
     DataProcessing.hpp
+    TS_SSDLiteCaller.hpp
 )
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g3 -O0")
 if (UNIX)

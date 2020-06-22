@@ -140,7 +140,7 @@ if __name__ == '__main__':
     ARGS = parse_args()
     DEVICE = torch.device("cpu")
     DATASET = FacesDB(ARGS.dataset)
-    # PREDICTOR = load_net(ARGS, DEVICE)
-    # PREDICTIONS, GTS = obtain_results(ARGS, DEVICE, DATASET, PREDICTOR)
-    # RES = eval_boxes(PREDICTIONS, GTS)[0]
-    # print(RES['coco_eval'].__str__())
+    PREDICTOR = load_net(ARGS, DEVICE)
+    PREDICTIONS, GTS = obtain_results(ARGS, DEVICE, DATASET, PREDICTOR)
+    RES = eval_boxes(PREDICTIONS, GTS)[0]
+    print(RES['coco_eval'].__str__())

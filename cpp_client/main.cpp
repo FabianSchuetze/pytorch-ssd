@@ -13,6 +13,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 
 #include "DataProcessing.hpp"
+#include "TS_SSDLiteCaller.hpp"
 
 namespace fs = std::filesystem;
 using namespace cv;
@@ -51,60 +52,35 @@ void serialize_results(const std::string& file,
 }
 
 int main(int argc, const char* argv[]) {
-    if (argc != 2) {
-        std::cerr << "usage: example-app <path-to-exported-script-module>\n";
+    if (argc != 4) {
+        std::cerr << "usage: example-app <path-to-exported-script-module> "
+                     "<path-to-config> < path-to-image-folder>\n";
         return -1;
     }
-
-    torch::jit::script::Module module;
-    try {
-        module = torch::jit::load(argv[1]);
-    } catch (const c10::Error& e) {
-        std::cerr << "error loading the model\n";
-        return -1;
-    }
-    std::string config =
-        "/home/fabian/Documents/work/github/ssd.pytorch/cpp_client/params.txt";
-    // std::string path =
-    //"/home/fabian/data/TS/CrossCalibration/ImageTCL/test/";
-    std::string path =
-        "/home/fabian/data/TS/CrossCalibration/ImageTCL/greyscale";
+    TS_SSDLiteCaller SSDLite(argv[1], argv[2]);
+    std::string path = argv[3];
     std::vector<std::string> files = load_images(path);
-    PostProcessing detection(config);
-    PreProcessing preprocess(config);
-    std::vector<torch::jit::IValue> inputs(1);
-    // std::vector<std::string> files = {
-    //"/home/fabian/data/TS/CrossCalibration/ImageTCL/greyscale/"
-    //"2000-01-01_109790322_121528_PCL_003754.png"};
+    int count(0);
+    float total_durations(0.);
     for (const std::string& img : files) {
-        cv::Mat image;
+        cv::Mat tmp;
         try {
-            cv::Mat tmp = cv::imread(img, cv::IMREAD_COLOR);
-            cv::cvtColor(tmp, image, COLOR_BGR2RGB);
+            tmp = cv::imread(img, cv::IMREAD_COLOR);
         } catch (...) {
             std::cout << "couldnt read img " << img << "; continue\n ";
             continue;
         }
-        int height = image.size().height;
-        int width = image.size().width;
-        std::pair<float, float> size = std::make_pair(height, width);
-        torch::Tensor tensor_image = preprocess.process(image);
-        // std::cout << tensor_image.slice({1, 1, } << std::endl;
-
-        torch::Device device(torch::kCPU);
-        module.to(device);
-        inputs[0] = tensor_image;
-        auto start = high_resolution_clock::now();
-        auto outputs = module.forward(inputs).toTuple();
-        torch::Tensor prediction = outputs->elements()[1].toTensor();
-        std::vector<PostProcessing::Landmark> result =
-            detection.process(outputs->elements()[0].toTensor(),
-                              outputs->elements()[1].toTensor(), size);
-        // priors.attr("priors").toTensor(), size);
-        auto stop = high_resolution_clock::now();
-        auto duration = duration_cast<microseconds>(stop - start);
-        std::cout << "finished " << img << " in " << duration.count()
-                  << std::endl;
+        std::vector<PostProcessing::Landmark> result;
+        auto start = std::chrono::high_resolution_clock::now();
+        SSDLite.predict(tmp, result);
+        auto stop = std::chrono::high_resolution_clock::now();
+        auto duration =
+            std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+        total_durations += duration.count();
+        count++;
         serialize_results(img, result);
     }
+    std::cout << "finished " << count << " images in " << total_durations / 1000
+              << " seconds; fps: " << count / (total_durations / 1000)
+              << std::endl;
 }

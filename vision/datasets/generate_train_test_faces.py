@@ -22,60 +22,50 @@ def parse_args():
     Converts the command line arguments
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument('--path', dest='path', type=str,
+    parser.add_argument('--dataset', dest='dataset', type=str,
                         help='Path to the xml file containing the annotations')
     args = parser.parse_args()
     return args
 
-def split(images: ET.ElementTree, train: bool, fraction: float):
+def split(images: ET.ElementTree, indices: np.ndarray):
     """
     Returns the train and test images
     """
-    # breakpoint();
-    np.random.seed(0)
-    n_imgs = len(images.findall('images/image'))
-    indices = np.arange(n_imgs)
-    np.random.shuffle(indices)
-    cutoff = int(n_imgs * fraction)
-    if train:
-        cutoff = int(cutoff / 8)
     idx = 0
-    keep = indices[:cutoff] if train else indices[cutoff:]
     for type_tag in images.findall('images'):
         for img in type_tag.iter('image'):
-            if idx not in keep:
+            if idx not in indices:
                 type_tag.remove(img)
             idx += 1
     return images
 
-def generate_database(images: ET.ElementTree, landmark: str)\
+def generate_database(images: ET.ElementTree)\
         -> Tuple[ET.ElementTree, ET.ElementTree]:
     """
-    Generates a database for all images which contain the particular landmark
+    Generates a database for all images which
     """
-    images = copy.deepcopy(images)
-    for type_tag in images.findall('images/image'):
-        for box in type_tag.iter('box'):
-            if box.find('label').text != landmark:
-                type_tag.remove(box)
-    # import pdb; pdb.set_trace()
-    train = split(copy.deepcopy(images), train=True, fraction=0.8)
-    test = split(copy.deepcopy(images), train=False, fraction=0.8)
+    np.random.seed(0)
+    n_imgs = len(images.findall('images/image'))
+    indices = np.arange(n_imgs)
+    np.random.shuffle(indices)
+    fraction = 0.8
+    cutoff = int(len(indices) * fraction)
+    train = split(copy.deepcopy(images), indices=indices[:cutoff])
+    test = split(copy.deepcopy(images), indices=indices[cutoff:])
     return train, test
 
 
-def serialize_trees(train: ET.ElementTree, test: ET.ElementTree, path: str,
-                    landmark: str) -> None:
+def serialize_trees(train: ET.ElementTree, test: ET.ElementTree, path: str) -> None:
     """
     Dumps the trees to the hdd
     """
-    directory = path.rsplit('/', 1)[0]
-    train.write(directory + '/' + landmark + '_train.xml')
-    test.write(directory + '/' + landmark + '_test.xml')
+    breakpoint()
+    directory = path.rsplit('.', 1)[0]
+    train.write(directory + '_train.xml')
+    test.write(directory + '_test.xml')
 
 if __name__ == "__main__":
     CLARGS = parse_args()
-    TREE = load_tree(CLARGS.path)
-    for marker in ['left_eye', 'right_eye', 'glabella', 'nose_tip']:
-        TRAIN, TEST = generate_database(TREE, marker)
-        serialize_trees(TRAIN, TEST, CLARGS.path, marker)
+    TREE = load_tree(CLARGS.dataset)
+    TRAIN, TEST = generate_database(TREE)
+    serialize_trees(TRAIN, TEST, CLARGS.dataset)
