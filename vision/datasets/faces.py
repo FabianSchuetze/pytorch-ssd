@@ -29,7 +29,7 @@ class FacesDB(data.Dataset):
     def __init__(self, database: str, target_transform=None):
         self._database = database
         self.ids = self._load_images()
-        self.class_names = ('BACKGROUND', 'glabella, left_eye', 'right_eye',
+        self.class_names = ('BACKGROUND', 'glabella', 'left_eye', 'right_eye',
                             'nose_tip')
         self._conversion = {'glabella': 1, 'left_eye':2, 'right_eye':3,
                             'nose_tip': 4}

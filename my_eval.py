@@ -67,8 +67,6 @@ def eval_boxes(predictions, gts):
                               gt_boxes, gt_labels)
     return res, gt_labels, pred_labels
 
-
-
 def parse_args():
     """
     Returns the command line arguments
@@ -142,19 +140,7 @@ if __name__ == '__main__':
     ARGS = parse_args()
     DEVICE = torch.device("cpu")
     DATASET = FacesDB(ARGS.dataset)
-    PREDICTOR = load_net(ARGS, DEVICE)
-    PREDICTIONS, GTS = obtain_results(ARGS, DEVICE, DATASET, PREDICTOR)
-    # TOTAL_TIME = 0
-    # for i in range(len(DATASET)):
-        # print("process image", i)
-        # image, gt_boxes, gt_labels = DATASET[i]
-        # begin = time.time()
-        # boxes, labels, probs = PREDICTOR.predict(image)
-        # TOTAL_TIME += time.time() - begin
-        # PREDICTIONS.append({'boxes': boxes, 'labels':labels,
-                            # 'scores':probs})
-        # GTS.append({'boxes':gt_boxes, 'labels':gt_labels})
-    # print("The were %i images passed, in %.2f second, FPS, %.2f"\
-            # %(len(DATASET), TOTAL_TIME, len(DATASET) / TOTAL_TIME))
-    RES = eval_boxes(PREDICTIONS, GTS)[0]
-    print(RES['coco_eval'].__str__())
+    # PREDICTOR = load_net(ARGS, DEVICE)
+    # PREDICTIONS, GTS = obtain_results(ARGS, DEVICE, DATASET, PREDICTOR)
+    # RES = eval_boxes(PREDICTIONS, GTS)[0]
+    # print(RES['coco_eval'].__str__())
