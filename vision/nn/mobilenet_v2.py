@@ -87,8 +87,9 @@ class InvertedResidual(nn.Module):
             nn.BatchNorm2d(oup, momentum=0.1),
         ])
         self.conv = nn.Sequential(*layers)
+        if self.use_res_connect:
         # Replace torch.add with floatfunctional
-        self.skip_add = nn.quantized.FloatFunctional()
+            self.skip_add = nn.quantized.FloatFunctional()
 
     def forward(self, x):
         if self.use_res_connect:
