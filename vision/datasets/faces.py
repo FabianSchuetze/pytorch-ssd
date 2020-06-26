@@ -8,7 +8,8 @@ import torch
 import torch.utils.data as data
 import cv2
 import numpy as np
-# from .conversion_functions import Cropping, visualize_box
+from .conversion_functions import Cropping, visualize_box
+import matplotlib.pyplot as plt
 
 
 class FacesDB(data.Dataset):
@@ -26,7 +27,8 @@ class FacesDB(data.Dataset):
         The MatchPrior transform
     """
 
-    def __init__(self, database: str, target_transform=None):
+    def __init__(self, database: str, target_transform=None,
+                 random_transform=False):
         self._database = database
         self.ids = self._load_images()
         self.class_names = ('BACKGROUND', 'glabella', 'left_eye', 'right_eye',
@@ -34,7 +36,8 @@ class FacesDB(data.Dataset):
         self._conversion = {'glabella': 1, 'left_eye':2, 'right_eye':3,
                             'nose_tip': 4}
         self._target_transform = target_transform
-        # self._Crop = Cropping()
+        self._Crop = Cropping()
+        self._random_transform = random_transform
         self.name = 'Faces'
         self._filepath_storage = self._make_key_location_pair()
 
@@ -99,19 +102,34 @@ class FacesDB(data.Dataset):
         boxes, labels = self._load_targets(idx, height, width)
         return img, boxes, labels
 
-    def _random_augmentation(self, img, target):
-        if np.random.rand() < 0.3:
-            while True:
-                try:
-                    img, target = self._Crop.resize(img, target)
-                    break
-                except IndexError:
-                    pass
-        return img, target
+    def _random_augmentation(self, img, boxes, labels):
+        while True:
+            try:
+                img, boxes, labels = self._Crop.resize(img, boxes, labels)
+                break
+            except IndexError:
+                pass
+        return img, boxes, labels
+
+    def _transform_pipeline(self, img, boxes, labels):
+        """
+        Transform the images and labels randomly in a sequence of steps
+        """
+        rand = np.random.rand()
+        if rand < 0.3:
+            img, boxes, labels = self._random_augmentation(img, boxes, labels)
+            img = img.astype(np.float32)
+            boxes = boxes.astype(np.float32)
+            labels = labels.astype(np.int64)
+        # elif rand < 0.6:
+            # img = img[:, ::-1].copy()
+        return img, boxes, labels
 
     def __getitem__(self, index):
         img, boxes, labels = self._load_sample(index)
         img = self._resize_img(img)
+        if self._random_transform:
+            img, boxes, labels = self._transform_pipeline(img, boxes, labels)
         if self._target_transform:
             boxes, labels = self._target_transform(boxes, labels)
         img = torch.from_numpy(img.transpose(2, 0, 1))

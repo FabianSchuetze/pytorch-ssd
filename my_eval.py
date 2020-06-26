@@ -6,6 +6,7 @@ import time
 from typing import List
 import torch
 import numpy as np
+import matplotlib.pyplot as plt
 from chainercv.evaluations import eval_detection_coco
 from vision.utils.misc import str2bool
 from vision.ssd.mobilenet_v2_ssd_lite import create_mobilenetv2_ssd_lite,\
@@ -16,7 +17,6 @@ def _convert_box(pred_box: List[List[float]]):
     """Converts box to a form that can be used by cocoeval"""
     box = np.array(pred_box)
     return box[:, [1, 0, 3, 2]]
-
 
 def convert_gt_box(gt):
     """
@@ -74,7 +74,9 @@ def parse_args():
     parser = argparse.ArgumentParser(
         description="SSD Evaluation on VOC Dataset.")
     parser.add_argument("--trained_model", type=str)
-    parser.add_argument("--dataset", type=str,
+    parser.add_argument("--val_dataset", type=str,
+                        help="The root directory of the dataset")
+    parser.add_argument("--train_dataset", type=str,
                         help="The root directory of the dataset")
     parser.add_argument("--label_file", type=str, help="The label file path.")
     parser.add_argument("--use_cuda", type=str2bool, default=True)
@@ -135,11 +137,35 @@ def obtain_results(args, device, dataset, predictor):
             %(len(dataset), total_time, len(dataset) / total_time))
     return predictions, gts
 
+def quantify_train_data(args):
+    """
+    Correlates with the number of train data available
+    """
+    dataset = FacesDB(args.train_dataset)
+    summary = np.zeros(len(dataset.class_names))
+    for sample in dataset:
+        label = sample[2]
+        summary[label] += 1
+    return summary
+
+def correlate_train_data(results, args, key):
+    """
+    Correlates abundance of training data for a landmark with accuracy
+    """
+    fig, ax = plt.subplots()
+    dataset = FacesDB(args.train_dataset)
+    precision = results[key]
+    summary = quantify_train_data(args)
+    for idx, label in enumerate(dataset.class_names):
+        ax.scatter(summary[idx], precision[idx], label=label, s=200)
+    ax.set_title('Number of Samples and Accuracy', fontsize=20)
+    ax.set_xlabel('Number of Samples', fontsize=20)
+    ax.legend()
 
 if __name__ == '__main__':
     ARGS = parse_args()
     DEVICE = torch.device("cpu")
-    DATASET = FacesDB(ARGS.dataset)
+    DATASET = FacesDB(ARGS.val_dataset)
     PREDICTOR = load_net(ARGS, DEVICE)
     PREDICTIONS, GTS = obtain_results(ARGS, DEVICE, DATASET, PREDICTOR)
     RES = eval_boxes(PREDICTIONS, GTS)[0]

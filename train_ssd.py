@@ -242,7 +242,8 @@ if __name__ == '__main__':
             store_labels(label_file, dataset.class_names)
             num_classes = len(dataset.class_names)
         elif args.dataset_type == 'faces':
-            dataset = FacesDB(dataset_path, target_transform=target_transform)
+            dataset = FacesDB(dataset_path, target_transform=target_transform,
+                              random_transform=True)
             label_file = os.path.join(
                 args.checkpoint_folder,
                 "faces-model-labels.txt")

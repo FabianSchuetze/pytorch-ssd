@@ -59,7 +59,6 @@ def serialize_trees(train: ET.ElementTree, test: ET.ElementTree, path: str) -> N
     """
     Dumps the trees to the hdd
     """
-    breakpoint()
     directory = path.rsplit('.', 1)[0]
     train.write(directory + '_train.xml')
     test.write(directory + '_test.xml')
