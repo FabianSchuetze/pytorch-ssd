@@ -30,6 +30,7 @@ def convert_gt_box(gt):
     boxes = np.array(boxes[:, [1, 0, 3, 2]])
     return boxes
 
+
 def eval_boxes(predictions, gts):
     """Returns the coco evaluation metric for box detection.
 
@@ -84,6 +85,7 @@ def parse_args():
     parser.add_argument("--nms_method", type=str, default="hard")
     parser.add_argument("--batch_size", type=int, default=1)
     parser.add_argument("--num_workers", type=int, default=4)
+    parser.add_argument("--dataset_type", type=str)
     parser.add_argument(
         "--iou_threshold",
         type=float,

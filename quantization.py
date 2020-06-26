@@ -5,17 +5,19 @@ import argparse
 import time
 import os
 import torch
+import numpy as np
+from chainercv.evaluations import eval_detection_coco
 from torch.utils.data import DataLoader
 from vision.ssd.ssd import MatchPrior
 from vision.ssd.mobilenet_v2_ssd_lite import create_mobilenetv2_ssd_lite,\
     create_mobilenetv2_ssd_lite_predictor
 from vision.datasets.faces import FacesDB
-# from vision.ssd.data_preprocessing import TestTransform
+from vision.datasets.voc_dataset import VOCDataset
 from vision.ssd.config import mobilenetv1_ssd_config
 from vision.nn.multibox_loss import MultiboxLoss
 from my_eval import parse_args, eval_boxes
 
-def obtain_results(dataset, net, device, args):
+def obtain_results(dataset, net, device, args, max_steps=None):
     """
     Retursn pred and gts
     """
@@ -23,11 +25,11 @@ def obtain_results(dataset, net, device, args):
     predictor = create_mobilenetv2_ssd_lite_predictor(
         net, nms_method=args.nms_method, device=device,
         do_transform=args.do_transform)
-    # predictor = load_net(args, device)
     predictions, gts = [], []
     total_time = 0
-    for i in range(len(dataset)):
-        # print("process image", i)
+    if max_steps is None:
+        max_steps = len(dataset)
+    for i in range(max_steps):
         image, gt_boxes, gt_labels = dataset[i]
         begin = time.time()
         boxes, labels, probs = predictor.predict(image)
@@ -39,41 +41,6 @@ def obtain_results(dataset, net, device, args):
             %(len(dataset), total_time, len(dataset) / total_time))
     return predictions, gts
 
-def test(loader, net, device, max_iter=None):
-    net.eval()
-    # running_loss = 0.0
-    # running_regression_loss = 0.0
-    # running_classification_loss = 0.0
-    num, n_images = 0, 0
-    total = 0.
-    for i in range(len(loader)):
-    # for iteration, data in enumerate(loader):
-        images, boxes, labels = loader[i]
-        images = images.unsqueeze(0)
-        images = images.to(device)
-        # boxes = boxes.to(device)
-        # labels = labels.to(device)
-        num += 1
-        n_images += images.size(0)
-        with torch.no_grad():
-            begin = time.time()
-            confidence, locations = net(images)
-            end = time.time()
-            total += end - begin
-            # regression_loss, classification_loss = criterion(
-                # confidence, locations, labels, boxes)
-            # loss = regression_loss + classification_loss
-        # running_loss += loss.item()
-        # running_regression_loss += regression_loss.item()
-        # running_classification_loss += classification_loss.item()
-        if max_iter is not None:
-            if iteration > max_iter:
-                break
-    print("Images %i, Total time: %.3f, FPS  %.3f"\
-            %(n_images, total, n_images / total))
-    # return running_loss / num, running_regression_loss / \
-        # num, running_classification_loss / num
-
 
 def load_model(args, num_classes, device):
     def create_net(num): return create_mobilenetv2_ssd_lite(
@@ -84,22 +51,22 @@ def load_model(args, num_classes, device):
     return net
 
 
-def prepare_data(config, args):
-    target_transform = MatchPrior(config.priors, config.center_variance,
-                                  config.size_variance, 0.5)
-    test_transform = TestTransform(
-        config.image_size,
-        config.image_mean,
-        config.image_std)
-    dataset = VOCDataset(args.validation_dataset,
-                         transform=test_transform,
-                         target_transform=target_transform,
-                         is_test=True)
-    num_classes = len(dataset.class_names)
-    dataloader = DataLoader(dataset, args.batch_size,
-                            num_workers=args.num_workers,
-                            shuffle=False, drop_last=True)
-    return dataloader, num_classes
+def eval_boxes_voc(predictions, gts):
+    pred_boxes, pred_labels, pred_scores = [], [], []
+    gt_boxes, gt_labels = [], []
+    # breakpoint()
+    for pred, gt in zip(predictions, gts):
+        if len(pred['boxes']) > 0:
+            pred 
+            pred_boxes.append(pred['boxes'][pred['scores'] > 0.1])
+            pred_labels.append(np.array(pred['labels'][pred['scores'] > 0.1], dtype=np.int32))
+            pred_scores.append(np.array(pred['scores'][pred['scores'] > 0.1]))
+            gt_boxes.append(gt['boxes'])
+            gt_labels.append(gt['labels'].astype(np.int32))
+    res = eval_detection_coco(pred_boxes, pred_labels, pred_scores,
+                              gt_boxes, gt_labels)
+    return res
+
 
 
 def compare_quantization(dataset, net, args):
@@ -109,18 +76,23 @@ def compare_quantization(dataset, net, args):
     breakpoint()
     net.eval()
     device = torch.device("cpu")
-    res = obtain_results(dataset, net, device, args)
-    print(eval_boxes(res[0], res[1])[0]['coco_eval'].__str__())
-    # cpu_losses = test(dataset, net, criterion, device, 100)
+    res = obtain_results(dataset, net, device, args, 50)
+    if args.dataset_type == 'voc':
+        print(eval_boxes_voc(res[0], res[1])['coco_eval'].__str__())
+    else:
+        print(eval_boxes(res[0], res[1])[0]['coco_eval'].__str__())
     net.fuse_model()
     net.qconfig = torch.quantization.get_default_qat_qconfig('fbgemm')
     torch.quantization.prepare(net, inplace=True)
     net.eval()
-    obtain_results(dataset, net, device, args)
+    obtain_results(dataset, net, device, args, 150)
     # obtain_results(args, device, dataset, predictor)
     torch.quantization.convert(net, inplace=True)
-    quant_res = obtain_results(dataset, net, device, args)
-    print(eval_boxes(quant_res[0], quant_res[1])[0]['coco_eval'].__str__())
+    quant_res = obtain_results(dataset, net, device, args, 50)
+    if args.dataset_type == 'voc':
+        print(eval_boxes_voc(quant_res[0], quant_res[1])['coco_eval'].__str__())
+    else:
+        print(eval_boxes(res[0], res[1])[0]['coco_eval'].__str__())
     return res, quant_res
 
 def load_net(args, device):
@@ -151,14 +123,15 @@ if __name__ == "__main__":
     ARGS = parse_args()
     CONFIG = mobilenetv1_ssd_config
     DEVICE = torch.device("cpu")
-    DATASET = FacesDB(ARGS.dataset)
+    if ARGS.dataset_type == "voc":
+        DATASET = VOCDataset(ARGS.val_dataset, is_test=True)
+    elif ARGS.dataset_type == 'faces':
+        DATASET = FacesDB(ARGS.dataset)
     DATALOADER = DataLoader(DATASET, ARGS.batch_size,
                             num_workers=ARGS.num_workers,
                             shuffle=False, drop_last=True)
-    # DATASET, NUM_CLASSES = prepare_data(CONFIG, ARGS)
-    # NUM_CLASSES = [name.strip() for name in open(ARGS.label_file).readlines()]
     NET = load_net(ARGS, DEVICE)
     print_model_size("Full Model", NET)
     RES, QUANT_RES = compare_quantization(DATASET, NET, ARGS)
-    # cpu_loss, quant_loss = compare_quantization(DATASET, NET, CRITERION)
-    print_model_size("Full Model", NET)
+    # # cpu_loss, quant_loss = compare_quantization(DATASET, NET, CRITERION)
+    # print_model_size("Full Model", NET)

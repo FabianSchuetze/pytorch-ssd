@@ -121,8 +121,8 @@ class FacesDB(data.Dataset):
             img = img.astype(np.float32)
             boxes = boxes.astype(np.float32)
             labels = labels.astype(np.int64)
-        # elif rand < 0.6:
-            # img = img[:, ::-1].copy()
+        elif rand < 0.6:
+            img = img[:, ::-1].copy()
         return img, boxes, labels
 
     def __getitem__(self, index):
