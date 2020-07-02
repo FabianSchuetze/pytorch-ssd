@@ -1,6 +1,7 @@
 r"""
 Evalution with coco metric for faces dataset
 """
+import copy
 import argparse
 import time
 from typing import List
@@ -130,6 +131,7 @@ def obtain_results(args, device, dataset, predictor):
         print("process image", i)
         image, gt_boxes, gt_labels = dataset[i]
         begin = time.time()
+        predictor.net.priors = predictor.net.priors.to(device)
         boxes, labels, probs = predictor.predict(image)
         total_time += time.time() - begin
         predictions.append({'boxes': boxes, 'labels':labels,
@@ -164,11 +166,29 @@ def correlate_train_data(results, args, key):
     ax.set_xlabel('Number of Samples', fontsize=20)
     ax.legend()
 
+
+def stratifies_eval(predictions, gts):
+    fig, ax = plt.subplots()
+    stratified = {}
+    for i in range(1, 5):
+        smaller_preds, smaller_gts = [], []
+        for pred, gt in zip(copy.deepcopy(predictions), copy.deepcopy(gts)):
+            if len(gt['labels']) == i:
+                smaller_preds.append(pred)
+                smaller_gts.append(gt)
+        res = eval_boxes(smaller_preds, smaller_gts)[0]
+        # ax.scatter(i, np.nanmean(:wq
+        stratified[i] = res
+        print("For number: %i the length is %i"%(i, len(smaller_preds)))
+    return stratified
+
 if __name__ == '__main__':
     ARGS = parse_args()
     DEVICE = torch.device("cpu")
     DATASET = FacesDB(ARGS.val_dataset)
     PREDICTOR = load_net(ARGS, DEVICE)
+    PREDICTOR.net.priors = PREDICTOR.net.priors.to(DEVICE) #not elegant
     PREDICTIONS, GTS = obtain_results(ARGS, DEVICE, DATASET, PREDICTOR)
+    STRATIFIED_RES = stratifies_eval(PREDICTIONS, GTS)
     RES = eval_boxes(PREDICTIONS, GTS)[0]
     print(RES['coco_eval'].__str__())

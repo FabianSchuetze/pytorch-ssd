@@ -17,7 +17,8 @@ def SeperableConv2d(
         onnx_compatible=False):
     """Replace Conv2d with a depthwise Conv2d and Pointwise Conv2d.
     """
-    ReLU = nn.ReLU if onnx_compatible else nn.ReLU6
+    ReLU = nn.ReLU
+    # if onnx_compatible else nn.ReLU6
     return Sequential(
             ConvBNReLU(in_planes=in_channels,
                 out_planes=in_channels,

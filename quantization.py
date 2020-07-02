@@ -17,7 +17,8 @@ from vision.ssd.config import mobilenetv1_ssd_config
 from vision.nn.multibox_loss import MultiboxLoss
 from my_eval import parse_args, eval_boxes
 
-def obtain_results(dataset, net, device, args, max_steps=None):
+def obtain_results(dataset, net, device, args, max_steps=None,
+                   prob_threshold=0.1):
     """
     Retursn pred and gts
     """
@@ -25,14 +26,18 @@ def obtain_results(dataset, net, device, args, max_steps=None):
     predictor = create_mobilenetv2_ssd_lite_predictor(
         net, nms_method=args.nms_method, device=device,
         do_transform=args.do_transform)
+    predictor.iou_threshold = 0.3
     predictions, gts = [], []
     total_time = 0
     if max_steps is None:
         max_steps = len(dataset)
+    else:
+        max_steps = min(len(dataset), max_steps)
     for i in range(max_steps):
         image, gt_boxes, gt_labels = dataset[i]
         begin = time.time()
-        boxes, labels, probs = predictor.predict(image)
+        boxes, labels, probs = predictor.predict(image,
+                                                 prob_threshold=prob_threshold)
         total_time += time.time() - begin
         predictions.append({'boxes': boxes, 'labels':labels,
                             'scores':probs})
@@ -76,26 +81,29 @@ def compare_quantization(dataset, net, args):
     breakpoint()
     net.eval()
     device = torch.device("cpu")
-    res = obtain_results(dataset, net, device, args, 50)
+    res = obtain_results(dataset, net, device, args, 400, prob_threshold=0.2)
     if args.dataset_type == 'voc':
-        print(eval_boxes_voc(res[0], res[1])['coco_eval'].__str__())
+        coco = eval_boxes_voc(res[0], res[1])
     else:
-        print(eval_boxes(res[0], res[1])[0]['coco_eval'].__str__())
+        coco = eval_boxes(res[0], res[1])[0]
+    print(coco['coco_eval'].__str__())
     net.fuse_model()
-    net.qconfig = torch.quantization.get_default_qat_qconfig('fbgemm')
+    net.qconfig = torch.quantization.get_default_qconfig('fbgemm')
     torch.quantization.prepare(net, inplace=True)
-    net.eval()
-    obtain_results(dataset, net, device, args, 150)
+    obtain_results(dataset, net, device, args, 400, prob_threshold=0.2)
     # obtain_results(args, device, dataset, predictor)
     torch.quantization.convert(net, inplace=True)
-    quant_res = obtain_results(dataset, net, device, args, 50)
+    quant_res = obtain_results(dataset, net, device, args, 400,
+            prob_threshold=0.2)
     if args.dataset_type == 'voc':
-        print(eval_boxes_voc(quant_res[0], quant_res[1])['coco_eval'].__str__())
+        coco_quant = eval_boxes_voc(quant_res[0], quant_res[1])
     else:
-        print(eval_boxes(res[0], res[1])[0]['coco_eval'].__str__())
+        coco_quant = eval_boxes(quant_res[0], quant_res[1])[0]
+    print(coco_quant['coco_eval'].__str__())
+    breakpoint()
     return res, quant_res
 
-def load_net(args, device):
+def load_net(args, device, already_quantized=True):
     """
     Preparese the network
     """
@@ -103,6 +111,14 @@ def load_net(args, device):
     net = create_mobilenetv2_ssd_lite(len(class_names),
                                       width_mult=args.mb2_width_mult,
                                       is_test=True)
+    if already_quantized:
+        net.fuse_model()
+        net.qconfig = torch.quantization.get_default_qconfig('fbgemm')
+        torch.quantization.prepare_qat(net, inplace=True)
+        torch.quantization.convert(net, inplace=True)
+        net.load_state_dict(torch.load(args.trained_model))
+        net.to(device)
+        return net
     net.load(args.trained_model)
     net = net.to(device)
     return net
@@ -126,11 +142,15 @@ if __name__ == "__main__":
     if ARGS.dataset_type == "voc":
         DATASET = VOCDataset(ARGS.val_dataset, is_test=True)
     elif ARGS.dataset_type == 'faces':
-        DATASET = FacesDB(ARGS.dataset)
+        DATASET = FacesDB(ARGS.val_dataset)
+        ARGS.do_transform = False
+    else:
+        raise NameError("Not the correct name")
+
     DATALOADER = DataLoader(DATASET, ARGS.batch_size,
                             num_workers=ARGS.num_workers,
                             shuffle=False, drop_last=True)
-    NET = load_net(ARGS, DEVICE)
+    NET = load_net(ARGS, DEVICE, already_quantized=True)
     print_model_size("Full Model", NET)
     RES, QUANT_RES = compare_quantization(DATASET, NET, ARGS)
     # # cpu_loss, quant_loss = compare_quantization(DATASET, NET, CRITERION)

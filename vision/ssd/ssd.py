@@ -35,7 +35,7 @@ class SSD(nn.Module):
         self.regression_headers = regression_headers
         self.is_test = is_test
         self.config = config
-        self.quant= QuantStub()
+        self.quant = QuantStub()
         self.dequant = DeQuantStub()
 
         # register layers in source_layer_indexes by adding them to a module
