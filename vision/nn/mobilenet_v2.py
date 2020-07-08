@@ -1,5 +1,7 @@
-import torch.nn as nn
 import math
+import torch.nn as nn
+import torch
+from torch.quantization import QuantStub, DeQuantStub
 
 # Modified from https://github.com/tonylins/pytorch-mobilenet-v2/blob/master/MobileNetV2.py.
 # In this version, Relu6 is replaced with Relu to make it ONNX compatible.
@@ -7,33 +9,35 @@ import math
 
 
 def conv_bn(inp, oup, stride, use_batch_norm=True, onnx_compatible=False):
-    ReLU = nn.ReLU if onnx_compatible else nn.ReLU6
+    ReLU = nn.ReLU
+    # if onnx_compatible else nn.ReLU6
 
     if use_batch_norm:
         return nn.Sequential(
             nn.Conv2d(inp, oup, 3, stride, 1, bias=False),
             nn.BatchNorm2d(oup),
-            ReLU(inplace=True)
+            ReLU()
         )
     else:
         return nn.Sequential(
             nn.Conv2d(inp, oup, 3, stride, 1, bias=False),
-            ReLU(inplace=True)
+            ReLU()
         )
 
 
 def conv_1x1_bn(inp, oup, use_batch_norm=True, onnx_compatible=False):
-    ReLU = nn.ReLU if onnx_compatible else nn.ReLU6
+    ReLU = nn.ReLU 
+    # if onnx_compatible else nn.ReLU6
     if use_batch_norm:
         return nn.Sequential(
             nn.Conv2d(inp, oup, 1, 1, 0, bias=False),
             nn.BatchNorm2d(oup),
-            ReLU(inplace=True)
+            ReLU()
         )
     else:
         return nn.Sequential(
             nn.Conv2d(inp, oup, 1, 1, 0, bias=False),
-            ReLU(inplace=True)
+            ReLU()
         )
 
 class ConvBNReLU(nn.Sequential):
@@ -87,9 +91,9 @@ class InvertedResidual(nn.Module):
             nn.BatchNorm2d(oup, momentum=0.1),
         ])
         self.conv = nn.Sequential(*layers)
-        if self.use_res_connect:
+        # if self.use_res_connect:
         # Replace torch.add with floatfunctional
-            self.skip_add = nn.quantized.FloatFunctional()
+        self.skip_add = nn.quantized.FloatFunctional()
 
     def forward(self, x):
         if self.use_res_connect:
@@ -185,7 +189,7 @@ class MobileNetV2(nn.Module):
         assert input_size % 32 == 0
         input_channel = int(input_channel * width_mult)
         self.last_channel = int(last_channel * width_mult) if width_mult > 1.0 else last_channel
-        self.features = [conv_bn(3, input_channel, 2, onnx_compatible=onnx_compatible)]
+        self.features = [ConvBNReLU(3, input_channel, 2)]
         # building inverted residual blocks
         for t, c, n, s in interverted_residual_setting:
             output_channel = int(c * width_mult)
@@ -202,8 +206,8 @@ class MobileNetV2(nn.Module):
                                                # onnx_compatible=onnx_compatible))
                 input_channel = output_channel
         # building last several layers
-        self.features.append(conv_1x1_bn(input_channel, self.last_channel,
-                                         use_batch_norm=use_batch_norm, onnx_compatible=onnx_compatible))
+        self.features.append(ConvBNReLU(input_channel, self.last_channel,
+                                         kernel_size=1))
         # make it nn.Sequential
         self.features = nn.Sequential(*self.features)
 
@@ -214,11 +218,15 @@ class MobileNetV2(nn.Module):
         )
 
         self._initialize_weights()
+        # self.quant = QuantStub()
+        # self.dequant = DeQuantStub()
 
     def forward(self, x):
+        # x = self.quant(x)
         x = self.features(x)
         x = x.mean(3).mean(2)
         x = self.classifier(x)
+        # x = self.dequant(x)
         return x
 
     def _initialize_weights(self):
@@ -235,3 +243,18 @@ class MobileNetV2(nn.Module):
                 n = m.weight.size(1)
                 m.weight.data.normal_(0, 0.01)
                 m.bias.data.zero_()
+
+    def save(self, model_path):
+        torch.save(self.state_dict(), model_path)
+
+    def fuse_model(self):
+        for m in self.modules():
+            if isinstance(m, ConvBNReLU):
+                torch.quantization.fuse_modules(
+                    m, ['0', '1', '2'], inplace=True)
+            if isinstance(m, InvertedResidual):
+                # breakpoint()
+                for idx in range(len(m.conv)):
+                    if isinstance(m.conv[idx], nn.Conv2d):
+                        torch.quantization.fuse_modules(
+                            m.conv, [str(idx), str(idx + 1)], inplace=True)
