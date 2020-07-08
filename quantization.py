@@ -150,7 +150,7 @@ if __name__ == "__main__":
     DATALOADER = DataLoader(DATASET, ARGS.batch_size,
                             num_workers=ARGS.num_workers,
                             shuffle=False, drop_last=True)
-    NET = load_net(ARGS, DEVICE, already_quantized=True)
+    NET = load_net(ARGS, DEVICE, already_quantized=False)
     print_model_size("Full Model", NET)
     RES, QUANT_RES = compare_quantization(DATASET, NET, ARGS)
     # # cpu_loss, quant_loss = compare_quantization(DATASET, NET, CRITERION)
