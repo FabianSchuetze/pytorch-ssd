@@ -8,7 +8,7 @@ import torch
 import torch.utils.data as data
 import cv2
 import numpy as np
-from .conversion_functions import Cropping, visualize_box, HorizontalFlip
+from .conversion_functions import Cropping, visualize_box
 from torchvision.transforms import ColorJitter
 from torchvision.transforms.functional import to_tensor, to_pil_image
 import matplotlib.pyplot as plt
