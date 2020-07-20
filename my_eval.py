@@ -13,6 +13,7 @@ from vision.utils.misc import str2bool
 from vision.ssd.mobilenet_v2_ssd_lite import create_mobilenetv2_ssd_lite,\
     create_mobilenetv2_ssd_lite_predictor
 from vision.datasets.faces import FacesDB
+from vision.datasets.conversion_functions import visualize_box
 
 def _convert_box(pred_box: List[List[float]]):
     """Converts box to a form that can be used by cocoeval"""
@@ -125,21 +126,24 @@ def obtain_results(args, device, dataset, predictor):
     Retursn pred and gts
     """
     predictor = load_net(args, device)
-    predictions, gts = [], []
+    predictions, gts, images = [], [], []
     total_time = 0
     for i in range(len(dataset)):
         print("process image", i)
         image, gt_boxes, gt_labels = dataset[i]
         begin = time.time()
         predictor.net.priors = predictor.net.priors.to(device)
-        boxes, labels, probs = predictor.predict(image)
+        predictor.filter_threshold = 0.5
+        predictor.iou_threshold = 0.3
+        boxes, labels, probs = predictor.predict(image, top_k=1)
+        images.append(image.numpy().transpose(1, 2, 0))
         total_time += time.time() - begin
         predictions.append({'boxes': boxes, 'labels':labels,
                             'scores':probs})
         gts.append({'boxes':gt_boxes, 'labels':gt_labels})
     print("The were %i images passed, in %.2f second, FPS, %.2f"\
             %(len(dataset), total_time, len(dataset) / total_time))
-    return predictions, gts
+    return predictions, gts, images
 
 def quantify_train_data(args):
     """
@@ -151,6 +155,18 @@ def quantify_train_data(args):
         label = sample[2]
         summary[label] += 1
     return summary
+
+
+def plot_images(images, predictions):
+    plt.ion()
+    i = 0
+    for img, prediction in zip(images, predictions):
+        print("image number %i" %i)
+        visualize_box(img, prediction['boxes']/300)
+        plt.show()
+        _ = input("Press [enter] fto continue")
+        plt.close()
+        i += 1
 
 def correlate_train_data(results, args, key):
     """
@@ -187,8 +203,10 @@ if __name__ == '__main__':
     DEVICE = torch.device("cpu")
     DATASET = FacesDB(ARGS.val_dataset)
     PREDICTOR = load_net(ARGS, DEVICE)
+    PREDICTOR.filter_threshold = 0.5
     PREDICTOR.net.priors = PREDICTOR.net.priors.to(DEVICE) #not elegant
-    PREDICTIONS, GTS = obtain_results(ARGS, DEVICE, DATASET, PREDICTOR)
-    STRATIFIED_RES = stratifies_eval(PREDICTIONS, GTS)
+    PREDICTIONS, GTS, IMAGES = obtain_results(ARGS, DEVICE, DATASET, PREDICTOR)
+    # plot_images(IMAGES, PREDICTIONS)
+    # STRATIFIED_RES = stratifies_eval(PREDICTIONS, GTS)
     RES = eval_boxes(PREDICTIONS, GTS)[0]
     print(RES['coco_eval'].__str__())

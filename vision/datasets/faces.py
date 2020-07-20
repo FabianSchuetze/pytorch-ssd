@@ -8,7 +8,9 @@ import torch
 import torch.utils.data as data
 import cv2
 import numpy as np
-from .conversion_functions import Cropping, visualize_box
+from .conversion_functions import Cropping, visualize_box, HorizontalFlip
+from torchvision.transforms import ColorJitter
+from torchvision.transforms.functional import to_tensor, to_pil_image
 import matplotlib.pyplot as plt
 
 
@@ -37,6 +39,7 @@ class FacesDB(data.Dataset):
                             'nose_tip': 4}
         self._target_transform = target_transform
         self._Crop = Cropping()
+        self._jitter = ColorJitter(brightness=[0.8,3])
         self._random_transform = random_transform
         self.name = 'Faces'
         self._filepath_storage = self._make_key_location_pair()
@@ -111,28 +114,22 @@ class FacesDB(data.Dataset):
                 pass
         return img, boxes, labels
 
-    def _transform_pipeline(self, img, boxes, labels):
-        """
-        Transform the images and labels randomly in a sequence of steps
-        """
+    def _adjust_brightness(self, img):
+        # breakpoint()
         rand = np.random.rand()
         if rand < 0.3:
-            img, boxes, labels = self._random_augmentation(img, boxes, labels)
-            img = img.astype(np.float32)
-            boxes = boxes.astype(np.float32)
-            labels = labels.astype(np.int64)
-        elif rand < 0.6:
-            img = img[:, ::-1].copy()
-        return img, boxes, labels
+            img_jitter = self._jitter(to_pil_image(img))
+            img = to_tensor(img_jitter)
+        return img
 
     def __getitem__(self, index):
         img, boxes, labels = self._load_sample(index)
         img = self._resize_img(img)
-        if self._random_transform:
-            img, boxes, labels = self._transform_pipeline(img, boxes, labels)
         if self._target_transform:
             boxes, labels = self._target_transform(boxes, labels)
         img = torch.from_numpy(img.transpose(2, 0, 1))
+        if self._random_transform:
+            img = self._adjust_brightness(img)
         return img, boxes, labels
 
     def __len__(self):
@@ -170,7 +167,7 @@ class FacesDB(data.Dataset):
             box = []
             for i in range(4):
                 scale = width if i %2 == 0 else height
-                box.append(self._convert_to_box(tag)[i] * 300 / scale )
+                box.append(self._convert_to_box(tag)[i] * 300 / scale)
             boxes.append(box)
             labels.append(self._append_label(tag))
         difficult = np.zeros_like(labels, dtype=np.uint8)
