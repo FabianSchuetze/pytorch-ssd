@@ -158,15 +158,18 @@ def quantify_train_data(args):
         summary[label] += 1
     return summary
 
-
-def plot_images(images, predictions):
+def plot_images(images, predictions, serialize: bool = False):
     plt.ion()
     i = 0
     for img, prediction in zip(images, predictions):
         print("image number %i" %i)
         visualize_box(img, prediction['boxes']/300)
-        plt.show()
-        _ = input("Press [enter] fto continue")
+        if serialize:
+            plt.savefig("images/image_%i.png" %(i))
+        else:
+            plt.show()
+            breakpoint()
+            _ = input("Press [enter] fto continue")
         plt.close()
         i += 1
 
@@ -207,6 +210,6 @@ if __name__ == '__main__':
     PREDICTOR = load_net(ARGS, DEVICE)
     PREDICTOR.filter_threshold = 0.5
     PREDICTIONS, GTS, IMAGES = obtain_results(ARGS, DEVICE, DATASET, PREDICTOR)
-    # plot_images(IMAGES, PREDICTIONS)
-    RES = eval_boxes(PREDICTIONS, GTS)[0]
-    print(RES['coco_eval'].__str__())
+    plot_images(IMAGES, PREDICTIONS, serialize=True)
+    # RES = eval_boxes(PREDICTIONS, GTS)[0]
+    # print(RES['coco_eval'].__str__())
