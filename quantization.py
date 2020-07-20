@@ -10,8 +10,7 @@ from vision.datasets.faces import FacesDB
 from vision.ssd.config import mobilenetv1_ssd_config
 from my_eval import parse_args, eval_boxes
 
-def obtain_results(dataset, net, device, args, max_steps=None,
-                   prob_threshold=0.1):
+def obtain_results(data, net, device, args, n_steps=None, prob_threshold=0.1):
     """
     Retursn pred and gts
     """
@@ -22,12 +21,13 @@ def obtain_results(dataset, net, device, args, max_steps=None,
     predictor.iou_threshold = 0.3
     predictions, gts = [], []
     total_time = 0
-    if max_steps is None:
-        max_steps = len(dataset)
-    else:
-        max_steps = min(len(dataset), max_steps)
-    for i in range(max_steps):
-        image, gt_boxes, gt_labels = dataset[i]
+    # if max_steps is None:
+        # max_steps = len(dataset)
+    # else:
+        # max_steps = min(len(dataset), max_steps)
+    breakpoint()
+    for i in range(len(data) if n_steps is None else min(len(data), n_steps)):
+        image, gt_boxes, gt_labels = data[i]
         begin = time.time()
         boxes, labels, probs = predictor.predict(image,
                                                  prob_threshold=prob_threshold,
@@ -37,7 +37,7 @@ def obtain_results(dataset, net, device, args, max_steps=None,
                             'scores':probs})
         gts.append({'boxes':gt_boxes, 'labels':gt_labels})
     print("The were %i images passed, in %.2f second, FPS, %.2f"\
-            %(len(dataset), total_time, len(dataset) / total_time))
+            %(len(data), total_time, len(data) / total_time))
     return predictions, gts
 
 
@@ -54,7 +54,6 @@ def compare_quantization(train_dataset, val_dataset, net, args):
     """
     Quantized vs real model
     """
-    breakpoint()
     net.eval()
     device = torch.device("cpu")
     res = obtain_results(val_dataset, net, device, args, 400, prob_threshold=0.5)
@@ -65,6 +64,7 @@ def compare_quantization(train_dataset, val_dataset, net, args):
     torch.quantization.prepare(net, inplace=True)
     obtain_results(train_dataset, net, device, args, 400, prob_threshold=0.5)
     torch.quantization.convert(net, inplace=True)
+    breakpoint()
     quant_res = obtain_results(val_dataset, net, device, args, 400,
             prob_threshold=0.5)
     coco_quant = eval_boxes(quant_res[0], quant_res[1])[0]

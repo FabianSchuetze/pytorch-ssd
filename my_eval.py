@@ -110,12 +110,15 @@ def load_net(args, device):
     """
     Preparese the network
     """
-    class_names = [name.strip() for name in open(args.label_file).readlines()]
-    net = create_mobilenetv2_ssd_lite(len(class_names),
-                                      width_mult=args.mb2_width_mult,
-                                      is_test=True)
-    net.load(args.trained_model)
-    net = net.to(device)
+    try:
+        class_names = [name.strip() for name in open(args.label_file).readlines()]
+        net = create_mobilenetv2_ssd_lite(len(class_names),
+                                          width_mult=args.mb2_width_mult,
+                                          is_test=True)
+        net.load(args.trained_model)
+        net = net.to(device)
+    except AttributeError:
+        net = torch.jit.load(args.trained_model)
     predictor = create_mobilenetv2_ssd_lite_predictor(
         net, nms_method=args.nms_method, device=device,
         do_transform=args.do_transform)
@@ -132,7 +135,6 @@ def obtain_results(args, device, dataset, predictor):
         print("process image", i)
         image, gt_boxes, gt_labels = dataset[i]
         begin = time.time()
-        predictor.net.priors = predictor.net.priors.to(device)
         predictor.filter_threshold = 0.5
         predictor.iou_threshold = 0.3
         boxes, labels, probs = predictor.predict(image, top_k=1)
@@ -204,9 +206,7 @@ if __name__ == '__main__':
     DATASET = FacesDB(ARGS.val_dataset)
     PREDICTOR = load_net(ARGS, DEVICE)
     PREDICTOR.filter_threshold = 0.5
-    PREDICTOR.net.priors = PREDICTOR.net.priors.to(DEVICE) #not elegant
     PREDICTIONS, GTS, IMAGES = obtain_results(ARGS, DEVICE, DATASET, PREDICTOR)
     # plot_images(IMAGES, PREDICTIONS)
-    # STRATIFIED_RES = stratifies_eval(PREDICTIONS, GTS)
     RES = eval_boxes(PREDICTIONS, GTS)[0]
     print(RES['coco_eval'].__str__())
