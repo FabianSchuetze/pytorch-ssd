@@ -4,11 +4,17 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <string>
 #include "TS_SSDLiteCaller.hpp"
+#include <exception>
 using namespace cv;  // ugly - how to get COLOR_BGR2RGB?
 
 void TS_SSDLiteCaller::derserialize_model(const std::string& model_pth,
                                           const std::string& config) {
-    model = torch::jit::load(model_pth);
+    try {
+        model = torch::jit::load(model_pth);
+    } catch (const std::exception& e) {
+        std::cout << "inside expcetion " << std::endl;
+        std::cout << e.what() << std::endl;
+    }
     torch::Device device(torch::kCPU);
     model.to(device);  // put it on CPU
     preprocess = PreProcessing(config);
