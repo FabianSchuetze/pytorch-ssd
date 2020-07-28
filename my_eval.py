@@ -24,12 +24,15 @@ def convert_gt_box(gt):
     """
     Convert the result to a useful from
     """
-    boxes = gt[:, :4]
-    boxes[:, 0] *= 300
-    boxes[:, 2] *= 300
-    boxes[:, 1] *= 300
-    boxes[:, 3] *= 300
-    boxes = np.array(boxes[:, [1, 0, 3, 2]])
+    if len(gt) > 0:
+        boxes = gt[:, :4]
+        boxes[:, 0] *= 300
+        boxes[:, 2] *= 300
+        boxes[:, 1] *= 300
+        boxes[:, 3] *= 300
+        boxes = np.array(boxes[:, [1, 0, 3, 2]])
+    else:
+        boxes = np.array([])
     return boxes
 
 
@@ -168,7 +171,7 @@ def plot_images(images, predictions, serialize: bool = False):
             plt.savefig("images/image_%i.png" %(i))
         else:
             plt.show()
-            breakpoint()
+            # breakpoint()
             _ = input("Press [enter] fto continue")
         plt.close()
         i += 1
@@ -210,6 +213,6 @@ if __name__ == '__main__':
     PREDICTOR = load_net(ARGS, DEVICE)
     PREDICTOR.filter_threshold = 0.5
     PREDICTIONS, GTS, IMAGES = obtain_results(ARGS, DEVICE, DATASET, PREDICTOR)
-    plot_images(IMAGES, PREDICTIONS, serialize=True)
-    # RES = eval_boxes(PREDICTIONS, GTS)[0]
-    # print(RES['coco_eval'].__str__())
+    # plot_images(IMAGES, PREDICTIONS, serialize=False)
+    RES = eval_boxes(PREDICTIONS, GTS)[0]
+    print(RES['coco_eval'].__str__())

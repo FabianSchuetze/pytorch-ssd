@@ -39,7 +39,7 @@ class FacesDB(data.Dataset):
                             'nose_tip': 4}
         self._target_transform = target_transform
         self._Crop = Cropping()
-        self._jitter = ColorJitter(brightness=[0.8,3])
+        self._jitter = ColorJitter(brightness=[0.8, 3])
         self._random_transform = random_transform
         self.name = 'Faces'
         self._filepath_storage = self._make_key_location_pair()
