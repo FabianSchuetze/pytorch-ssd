@@ -1,15 +1,39 @@
 #include "Database.hpp"
 
 #include <map>
+#include <memory>
 #include <stdexcept>
 
 #include "/home/fabian/Documents/work/github/tinyxml2/tinyxml2.h"
-#include "/home/fabian/Documents/work/github/tinyxml2/tinyxml2.h"
+#include "tinyxml2.h"
 
-std::map<std::string, int> transform = {
-    {"glabella", 1}, {"left_eye", 2}, {"right_eye", 3}, {"nose_tip", 4}};
+Database::Database(const std::string& location)
+    : length(0), doc(), position(0) {
+    init_database(location);
+    init_transform();
+}
 
-PostProcessing::Landmark get_box(tinyxml2::XMLElement* box) {
+void Database::init_database(const std::string& location) {
+    tinyxml2::XMLError res = doc.LoadFile(location.c_str());
+    if (res != tinyxml2::XML_SUCCESS) {
+        throw std::runtime_error("Couldn't load file " + location);
+    }
+    tinyxml2::XMLElement* root =
+        doc.FirstChildElement("dataset")->FirstChildElement("images");
+    for (tinyxml2::XMLElement* tmp = root->FirstChildElement(); tmp != NULL;
+         tmp = tmp->NextSiblingElement()) {
+        length++;
+    }
+}
+
+void Database::init_transform() {
+    transform["glabella"] = 1;
+    transform["left_eye"] = 2;
+    transform["right_eye"] = 3;
+    transform["nose_tip"] = 4;
+};
+
+PostProcessing::Landmark Database::get_box(tinyxml2::XMLElement* box) {
     PostProcessing::Landmark landmark;
     landmark.xmax = std::stoi(box->Attribute("top"));
     landmark.xmax = std::stoi(box->Attribute("left"));
@@ -20,25 +44,28 @@ PostProcessing::Landmark get_box(tinyxml2::XMLElement* box) {
     return landmark;
 }
 
-std::vector<Database> read_xml_file(const std::string& location) {
-    std::vector<Database> database;
-    tinyxml2::XMLDocument doc;
-    tinyxml2::XMLError res = doc.LoadFile(location.c_str());
-    if (res != tinyxml2::XML_SUCCESS) {
-        throw std::runtime_error("Couldn't load file " + location);
+Database::iterator Database::get_gts(tinyxml2::XMLElement* pos) {
+    std::pair<std::string, std::vector<PostProcessing::Landmark>> gts;
+    for (tinyxml2::XMLElement* box = pos->FirstChildElement(); box != NULL;
+         box = box->NextSiblingElement()) {
+        gts.second.push_back(get_box(box));
     }
-    tinyxml2::XMLElement* start =
-        doc.FirstChildElement("dataset")->FirstChildElement("images");
-    for (tinyxml2::XMLElement* test = start->FirstChildElement(); test != NULL;
-         test = test->NextSiblingElement()) {
-        Database data;
-        data.filename = test->Attribute("file");
-        for (tinyxml2::XMLElement* box = test->FirstChildElement(); box != NULL;
-             box = box->NextSiblingElement()) {
-            data.gts.push_back(get_box(box));
-        }
-        database.push_back(data);
+    gts.first = pos->Attribute("file");
+    return gts;
+}
+
+Database::iterator Database::get_element() {
+    tinyxml2::XMLElement* start = doc.FirstChildElement("dataset")
+                                      ->FirstChildElement("images")
+                                      ->FirstChildElement();
+    int tmp = 0;
+    while (tmp < position) {
+        start = start->NextSiblingElement();
+        tmp++;
     }
-    return database;
+    std::string name = start->Attribute("file");
+    iterator res = get_gts(start);
+    position++;
+    return res;
 }
 
