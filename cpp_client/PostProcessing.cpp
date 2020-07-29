@@ -73,10 +73,10 @@ void PostProcessing::convert(int label, const Tensor& scores, const Tensor& boxe
     int height = img_size.first;
     int width = img_size.second;
     for (int i = 0; i < scores.size(0); ++i) {
-        float xmin = boxes[i][0].item<float>() * height;
-        float ymin = boxes[i][1].item<float>() * width;
-        float xmax = boxes[i][2].item<float>() * height;
-        float ymax = boxes[i][3].item<float>() * width;
+        float xmin = boxes[i][0].item<float>() * 300;
+        float ymin = boxes[i][1].item<float>() * 300;
+        float xmax = boxes[i][2].item<float>() * 300;
+        float ymax = boxes[i][3].item<float>() * 300;
         PostProcessing::Landmark l;
         l.xmin = xmin;
         l.ymin = ymin;

@@ -192,4 +192,5 @@ class FacesDB(data.Dataset):
         img_id = self._filepath_storage[filename]
         img = self._load_image(img_id)
         height, width, _ = img.shape
-        return self.get_annotation(img_id, height, width)[1]
+        return self.get_annotation(img_id, height, width)[1],\
+                self._resize_img(img)

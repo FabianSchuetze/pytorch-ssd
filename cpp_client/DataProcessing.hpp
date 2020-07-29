@@ -21,7 +21,7 @@ class PostProcessing {
                  const std::pair<float, float>&, std::vector<Landmark>&);
     void print_arguments();
 
-    int _num_classes, _top_k, _bkg_label;
+    int _num_classes, _bkg_label;
     float _conf_thresh, _nms_thresh;
     std::vector<float> _variances;
 };

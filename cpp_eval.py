@@ -2,14 +2,15 @@ r"""
 An evaluation file that is compatible with how to do predicions with the cpp
 client
 """
+import copy
+import argparse
 import os
 from typing import List, Dict, Tuple
 import numpy as np
+import matplotlib.pyplot as plt
 from chainercv.evaluations import eval_detection_coco
 from vision.datasets.faces import FacesDB
-# from utils.augmentations import SmallAugmentation
-import matplotlib.pyplot as plt
-import argparse
+from my_eval import plot_images as _plot_images
 
 
 
@@ -67,19 +68,19 @@ def load_predictions_and_gts(folder: str, dataset) -> Tuple[List[Dict]]:
     """
     parses the predicitons at path and returns a list of results
     """
-    predictions = []
-    gts = []
+    predictions, gts, imgs = [], [], []
     for file in os.listdir(folder):
         prediction = _parse_file(folder + file)
         new_file = file.split('.')[0] + '.png'
         try:
-            gt = dataset.pull_anno(new_file)
+            gt, img = dataset.pull_anno(new_file)
             gts.append({'boxes':gt[0], 'labels': gt[1]})
             predictions.append(prediction)
+            imgs.append(img)
         except KeyError:
             pass
     assert len(predictions) == len(gts), "Preds and Gts must have same lenght"
-    return predictions, gts
+    return predictions, gts, imgs
 
 def barchart_frequency(gt_labels: List[np.ndarray], pred_labels: List[np.ndarray]):
     """
@@ -113,6 +114,13 @@ def parse_args():
     return args
 
 
+def plot_images(imgs, preds):
+    preds = copy.deepcopy(preds)
+    for pred in preds:
+        pred['boxes'] = np.array(pred['boxes'], dtype=np.float32)
+    _plot_images(imgs, preds)
+
+
 def load_dataset(args):
     """
     Returns the dataset"""
@@ -121,7 +129,7 @@ def load_dataset(args):
 if __name__ == "__main__":
     ARGS = parse_args()
     FACES = load_dataset(ARGS)
-    PREDICTIONS, GTS = load_predictions_and_gts('cpp_client/build/results/',
+    PREDICTIONS, GTS, IMAGES = load_predictions_and_gts('cpp_client/build/results/',
                                                 FACES)
     RES, GT_LABELS, PRED_LABELS = eval_boxes(PREDICTIONS, GTS)
     print(RES['coco_eval'].__str__())
