@@ -9,6 +9,7 @@ from chainercv.evaluations import eval_detection_coco
 from vision.datasets.faces import FacesDB
 # from utils.augmentations import SmallAugmentation
 import matplotlib.pyplot as plt
+import argparse
 
 
 
@@ -16,15 +17,6 @@ def _convert_box(pred_box: List[List[float]]):
     """Converts box to a form that can be used by cocoeval"""
     box = np.array(pred_box)
     return box[:, [1, 0, 3, 2]]
-
-
-def convert_gt(b):
-    """
-    Convert the result to a useful from
-    """
-    boxes = boxes[:, [1, 0, 3, 2]]
-    # label = np.array(gt[:, 4] + 1, dtype=np.int32)
-    return boxes, label
 
 def eval_boxes(predictions, gts):
     """Returns the coco evaluation metric for box detection.
@@ -86,6 +78,7 @@ def load_predictions_and_gts(folder: str, dataset) -> Tuple[List[Dict]]:
             predictions.append(prediction)
         except KeyError:
             pass
+    assert len(predictions) == len(gts), "Preds and Gts must have same lenght"
     return predictions, gts
 
 def barchart_frequency(gt_labels: List[np.ndarray], pred_labels: List[np.ndarray]):
@@ -111,16 +104,23 @@ def barchart_frequency(gt_labels: List[np.ndarray], pred_labels: List[np.ndarray
     ax.legend(prop={'size': 20})
     return fig
 
-def load_dataset():
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="SSD Evaluation on VOC Dataset.")
+    parser.add_argument("--val_dataset", type=str,
+                        help="The root directory of the dataset")
+    args = parser.parse_args()
+    return args
+
+
+def load_dataset(args):
     """
     Returns the dataset"""
-    # cfg = config.faces
-    path = '/home/fabian/data/TS/CrossCalibration/TCLObjectDetectionDatabase'
-    path += '/greyscale.xml'
-    return FacesDB(path)
+    return FacesDB(args.val_dataset)
 
 if __name__ == "__main__":
-    FACES = load_dataset()
+    ARGS = parse_args()
+    FACES = load_dataset(ARGS)
     PREDICTIONS, GTS = load_predictions_and_gts('cpp_client/build/results/',
                                                 FACES)
     RES, GT_LABELS, PRED_LABELS = eval_boxes(PREDICTIONS, GTS)

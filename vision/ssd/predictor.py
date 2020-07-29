@@ -45,7 +45,9 @@ class Predictor:
             height, width, _ = image.shape
             image = self.transform(image)
         else:
-            _, height, width = image.shape
+            # _, height, width = image.shape
+            # original_height, original_width = 256, 320
+            original_height, original_width = 300, 300
         images = image.unsqueeze(0)
         images = images.to(self.device)
         with torch.no_grad():
@@ -81,9 +83,9 @@ class Predictor:
             return torch.tensor([]), torch.tensor([]), torch.tensor([])
         # breakpoint()
         picked_box_probs = torch.cat(picked_box_probs)
-        picked_box_probs[:, 0] *= width
-        picked_box_probs[:, 1] *= height
-        picked_box_probs[:, 2] *= width
-        picked_box_probs[:, 3] *= height
+        picked_box_probs[:, 0] *= original_width
+        picked_box_probs[:, 1] *= original_height
+        picked_box_probs[:, 2] *= original_width
+        picked_box_probs[:, 3] *= original_height
         return picked_box_probs[:, :4], torch.tensor(
             picked_labels), picked_box_probs[:, 4]

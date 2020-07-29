@@ -11,14 +11,14 @@ float area(const Landmark landmark) {
     return length * height;
 }
 
-float print_area(const Landmark landmark) {
+void print_area(const Landmark landmark) {
     std::cout << "xmin, xmax, ymin, ymax: " << 
         landmark.xmin << ", " << landmark.xmax << ", " <<
         landmark.ymin << ", " << landmark.ymax << std::endl;
 }
 float caclulate_iou(const Landmark& prediction, const Landmark& gt) {
     std::cout << "area of prediction: "; print_area(prediction);
-    std::cout << "area of gts: " << print_area(gt);
+    std::cout << "area of gts: "; print_area(gt);
     float xA = std::max(prediction.xmin, gt.xmin);
     float xB = std::min(prediction.xmax, gt.xmax);
     float yA = std::max(prediction.ymin, gt.ymin);

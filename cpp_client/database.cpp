@@ -35,10 +35,14 @@ void Database::init_transform() {
 
 PostProcessing::Landmark Database::get_box(tinyxml2::XMLElement* box) {
     PostProcessing::Landmark landmark;
-    landmark.xmax = std::stoi(box->Attribute("top"));
-    landmark.xmax = std::stoi(box->Attribute("left"));
-    landmark.ymin = std::stoi(box->Attribute("width"));
-    landmark.ymax = std::stoi(box->Attribute("height"));
+    float xmin = std::stof(box->Attribute("left"));
+    float xmax = xmin + std::stof(box->Attribute("width"));
+    float ymin = std::stof(box->Attribute("top"));
+    float ymax = ymin + std::stof(box->Attribute("height"));
+    landmark.xmin = xmin;
+    landmark.xmax = xmax;
+    landmark.ymin = ymin;
+    landmark.ymax = ymax;
     std::string label = box->FirstChildElement()->GetText();
     landmark.label = transform[label];
     return landmark;
