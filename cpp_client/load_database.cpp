@@ -14,6 +14,7 @@
 
 #include "DataProcessing.hpp"
 #include "Database.hpp"
+#include "Evaluate.hpp"
 #include "TS_SSDLiteCaller.hpp"
 
 using namespace cv;
@@ -65,4 +66,6 @@ int main(int argc, const char* argv[]) {
     std::cout << "finished " << count << " images in " << total_durations / 1000
               << " seconds; fps: " << count / (total_durations / 1000)
               << std::endl;
+    float res = eval_result(predictions, gts);
+    std::cout << "Precision: " << res << std::endl;
 }

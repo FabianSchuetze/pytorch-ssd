@@ -15,11 +15,8 @@ class PostProcessing {
     std::vector<Landmark> process(const torch::Tensor& scores,
                                   const torch::Tensor& boxes,
                                   std::pair<float, float> const&);
-    ;
 
    private:
-    //torch::Tensor decode(const torch::Tensor& localization,
-                         //const torch::Tensor& priors);
     void convert(int, const torch::Tensor&, const torch::Tensor&,
                  const std::pair<float, float>&, std::vector<Landmark>&);
     void print_arguments();

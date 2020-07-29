@@ -16,6 +16,7 @@ set(${LIBRARY_TARGET_NAME}_SRC
     TS_SSDLiteCaller.cpp
     database.cpp
     tinyxml2.cpp
+    evaluate.cpp
 )
 
 set(${LIBRARY_TARGET_NAME}_HDR
@@ -23,6 +24,7 @@ set(${LIBRARY_TARGET_NAME}_HDR
     TS_SSDLiteCaller.hpp
     Database.hpp
     tinyxml2.h
+    Evaluate.hpp
 )
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g3 -O0")
 if (UNIX)
