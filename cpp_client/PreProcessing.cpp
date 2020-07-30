@@ -8,6 +8,10 @@
 using namespace cv;
 PreProcessing::PreProcessing(const std::string& config) : _size(0) {
     std::ifstream paramFile{config};
+    if (paramFile.fail()) {
+        std::string m("Cannot load config at: " + config + ", thrown from:\n");
+        throw std::runtime_error(m + __PRETTY_FUNCTION__);
+    }
     std::map<std::string, std::string> params{
         std::istream_iterator<kv_pair>{paramFile},
         std::istream_iterator<kv_pair>{}};

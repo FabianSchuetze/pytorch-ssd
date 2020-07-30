@@ -11,11 +11,12 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
+#include <gtest/gtest.h>
 
-#include "DataProcessing.hpp"
-#include "Database.hpp"
-#include "Evaluate.hpp"
-#include "TS_SSDLiteCaller.hpp"
+#include "../DataProcessing.hpp"
+#include "../Database.hpp"
+#include "../Evaluate.hpp"
+#include "../TS_SSDLiteCaller.hpp"
 
 void serialize_results(const std::string& file,
                        const std::vector<PostProcessing::Landmark>& result) {
@@ -44,15 +45,18 @@ void serialize_results(const std::string& file,
 using namespace cv;
 using namespace std::chrono;
 
-int main(int argc, const char* argv[]) {
-    if (argc != 4) {
-        std::cerr << "usage: example-app <path-to-exported-script-module> "
-                     "<path-to-config> < path-to-image-folder>\n";
-        return -1;
-    }
-    TS_SSDLiteCaller SSDLite(argv[1], argv[2]);
-    std::string path = argv[3];
-    Database database(path);
+TEST(MYTEST, Accuracy) {
+    std::cout << "begin test" << std::endl;
+    std::string root = "/home/fabian/Documents/work/github/pytorch-ssd/";
+    std::string model = root + "traced_quantized.pt";
+    std::string params = root + "cpp_client/params.txt";
+    std::string db =
+        "/home/fabian/data/TS/CrossCalibration/TCLObjectDetectionDatabase/"
+        "greyscale_test.xml";
+    std::cout << "begin test1.5" << std::endl;
+    TS_SSDLiteCaller SSDLite(model, params);
+    Database database(db);
+    std::cout << "begin test3" << std::endl;
 
     int count(0);
     float total_durations(0.);
@@ -87,10 +91,13 @@ int main(int argc, const char* argv[]) {
         serialize_results(img.first, result);
         names.push_back(img.first);
     }
-    std::cout << "finished " << count << " images in " << total_durations / 1000
-              << " seconds; fps: " << count / (total_durations / 1000)
-              << std::endl;
     result res = eval_result(predictions, gts, names);
-    std::cout << "Precision: " << res.precision << ", and recall " << res.recall
-              << std::endl;
+    ASSERT_GT(res.precision, 0.5);
+    ASSERT_GT(res.recall, 0.5);
+
 }
+
+int main(int argc, char** argv) {
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
+};

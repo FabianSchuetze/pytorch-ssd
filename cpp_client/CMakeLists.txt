@@ -7,6 +7,7 @@ find_package(Python REQUIRED)
 find_package(PythonLibs REQUIRED)
 find_package(TorchVision REQUIRED)
 find_package( OpenCV REQUIRED )
+find_package(GTest REQUIRED)
 
 include_directories(${PYTHON_INCLUDE_DIRS})
 
@@ -38,3 +39,5 @@ target_link_libraries(example-app  PUBLIC Faces "${TORCH_LIBRARIES}" TorchVision
 set_property(TARGET example-app PROPERTY CXX_STANDARD 17)
 add_executable(read-app load_database.cpp)
 target_link_libraries(read-app  PUBLIC Faces "${TORCH_LIBRARIES}" TorchVision::TorchVision ${OpenCV_LIBS})
+
+add_subdirectory(tests)

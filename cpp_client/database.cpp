@@ -16,7 +16,8 @@ Database::Database(const std::string& location)
 void Database::init_database(const std::string& location) {
     tinyxml2::XMLError res = doc.LoadFile(location.c_str());
     if (res != tinyxml2::XML_SUCCESS) {
-        throw std::runtime_error("Couldn't load file " + location);
+        std::string m("Cannot parse file, at " + location + ", thrown from:\n");
+        throw std::runtime_error(m + __PRETTY_FUNCTION__);
     }
     tinyxml2::XMLElement* root =
         doc.FirstChildElement("dataset")->FirstChildElement("images");
