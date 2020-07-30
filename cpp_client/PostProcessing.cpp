@@ -12,7 +12,6 @@ typedef std::vector<PostProcessing::Landmark> landmarks;
 
 PostProcessing::PostProcessing(const std::string& config)
     : _num_classes(0),
-      _top_k(0),
       _bkg_label(0),
       _conf_thresh(0),
       _nms_thresh(0),
@@ -22,7 +21,6 @@ PostProcessing::PostProcessing(const std::string& config)
         std::istream_iterator<kv_pair>{paramFile},
         std::istream_iterator<kv_pair>{}};
     _num_classes = std::stoi(params["num_classes"]);
-    _top_k = std::stoi(params.at("top_k"));
     _bkg_label = std::stoi(params.at("bkg_label"));
     _conf_thresh = std::stof(params.at("conf_thresh"));
     _nms_thresh = std::stof(params.at("nms_thresh"));
@@ -44,7 +42,7 @@ void PostProcessing::print_arguments() {
               << std::endl;
 }
 
-landmarks PostProcessing::process(const Tensor& confidence, 
+landmarks PostProcessing::process(const Tensor& confidence,
                                   const Tensor& localization,
                                   const std::pair<float, float>& img_size) {
     std::vector<PostProcessing::Landmark> results;
@@ -67,7 +65,8 @@ landmarks PostProcessing::process(const Tensor& confidence,
     return results;
 }
 
-void PostProcessing::convert(int label, const Tensor& scores, const Tensor& boxes,
+void PostProcessing::convert(int label, const Tensor& scores,
+                             const Tensor& boxes,
                              const std::pair<float, float>& img_size,
                              landmarks& results) {
     int height = img_size.first;

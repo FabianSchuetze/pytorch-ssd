@@ -39,10 +39,10 @@ PostProcessing::Landmark Database::get_box(tinyxml2::XMLElement* box) {
     float xmax = xmin + std::stof(box->Attribute("width"));
     float ymin = std::stof(box->Attribute("top"));
     float ymax = ymin + std::stof(box->Attribute("height"));
-    landmark.xmin = xmin * 300.0 / 256;
-    landmark.xmax = xmax * 300.0 / 256;
-    landmark.ymin = ymin * 300.0 / 320;
-    landmark.ymax = ymax * 300.0 / 320;
+    landmark.xmin = xmin * 300.0 / 320;
+    landmark.xmax = xmax * 300.0 / 320;
+    landmark.ymin = ymin * 300.0 / 256;
+    landmark.ymax = ymax * 300.0 / 256;
     std::string label = box->FirstChildElement()->GetText();
     landmark.label = transform[label];
     return landmark;

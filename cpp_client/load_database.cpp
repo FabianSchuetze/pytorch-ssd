@@ -58,12 +58,13 @@ int main(int argc, const char* argv[]) {
     std::cout << "start things" << std::endl;
     int start = 0;
     std::vector<std::vector<PostProcessing::Landmark>> gts, predictions;
+    std::vector<std::string> names;
     //std::vector<std::vector<PostProcessing::Landmark>> predictions;
     while (start < database.length) {
         start++;
         auto img = database.get_element();
         cv::Mat tmp;
-        std::cout << "loading image " << img.first << std::endl;
+        //std::cout << "loading image " << img.first << std::endl;
         try {
             tmp = cv::imread(img.first, cv::IMREAD_COLOR);
         } catch (...) {
@@ -87,10 +88,12 @@ int main(int argc, const char* argv[]) {
         gts.push_back(img.second);
         count++;
         serialize_results(img.first, result);
+        names.push_back(img.first);
     }
     std::cout << "finished " << count << " images in " << total_durations / 1000
               << " seconds; fps: " << count / (total_durations / 1000)
               << std::endl;
-    float res = eval_result(predictions, gts);
-    std::cout << "Precision: " << res << std::endl;
+    result res = eval_result(predictions, gts, names);
+    std::cout << "Precision: " << res.precision << ", and recall " << 
+        res.recall << std::endl;
 }

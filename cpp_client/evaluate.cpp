@@ -1,5 +1,6 @@
 #include "Evaluate.hpp"
 
+#include <algorithm>
 #include <stdexcept>
 
 using std::vector;
@@ -16,15 +17,14 @@ void print_area(const Landmark landmark) {
         landmark.xmin << ", " << landmark.xmax << ", " <<
         landmark.ymin << ", " << landmark.ymax << std::endl;
 }
-float caclulate_iou(const Landmark& prediction, const Landmark& gt) {
-    std::cout << "area of prediction: "; print_area(prediction);
-    std::cout << "area of gts: "; print_area(gt);
-    float xA = std::max(prediction.xmin, gt.xmin);
-    float xB = std::min(prediction.xmax, gt.xmax);
-    float yA = std::max(prediction.ymin, gt.ymin);
-    float yB = std::min(prediction.ymax, gt.ymax);
-    float intersection = (xB - xA) * (yB - yA);
-    float area_union = area(prediction) + area(gt) - intersection;
+float caclulate_iou(const Landmark& a, const Landmark& b) {
+    float xA = std::max(a.xmin, b.xmin);
+    float xB = std::min(a.xmax, b.xmax);
+    float yA = std::max(a.ymin, b.ymin);
+    float yB = std::min(a.ymax, b.ymax);
+    float low = 0.;
+    float intersection = std::max((xB - xA),low) * std::max((yB - yA), low);
+    float area_union = area(a) + area(b) - intersection;
     return intersection / area_union;
 }
 
@@ -37,20 +37,40 @@ void check_precision(const Landmarks& predictions, const Landmarks& gts,
                                 });
         if (res != gts.end()) {
             float iou = caclulate_iou(prediction, *res);
-            std::cout << "The iou is " << iou << std::endl;
             if (iou > 0.5) correct++;
         }
         total++;
     }
 }
-float eval_result(const vector<Landmarks>& predictions,
-                  const vector<Landmarks>& gts) {
-    int correct(0), total(0);
+
+void check_recall(const Landmarks& predictions, const Landmarks& gts,
+                     int& correct, int& total) {
+    for (const auto gt : gts) {
+        auto res = std::find_if(predictions.begin(), predictions.end(),
+                                [&gt](const Landmark& x) {
+                                    return x.label == gt.label;
+                                });
+        if (res != predictions.end()) {
+            float iou = caclulate_iou(*res, gt);
+            if (iou > 0.5) correct++;
+        }
+        total++;
+    }
+}
+result eval_result(const vector<Landmarks>& predictions,
+                  const vector<Landmarks>& gts,
+                  const vector<std::string>& names) {
+    result res;
+    int precision_cor(0), precision_tot(0);
+    int recall_cor(0), recall_tot(0);
     if (predictions.size() != gts.size()) {
         throw std::runtime_error("Predictions and Gts have different lenght");
     }
     for (size_t i = 0; i < predictions.size(); ++i) {
-        check_precision(predictions[i], gts[i], correct, total);
+        check_precision(predictions[i], gts[i], precision_cor, precision_tot);
+        check_recall(predictions[i], gts[i], recall_cor, recall_tot);
     }
-    return (float)correct / total;
+    res.precision = (float) precision_cor / precision_tot;
+    res.recall = (float) recall_cor / recall_tot;
+    return res;
 }
