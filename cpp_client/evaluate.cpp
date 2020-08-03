@@ -4,7 +4,6 @@
 #include <stdexcept>
 
 using std::vector;
-typedef PostProcessing::Landmark Landmark;
 
 float area(const Landmark landmark) {
     float length = landmark.xmax - landmark.xmin;
@@ -58,8 +57,7 @@ void check_recall(const Landmarks& predictions, const Landmarks& gts,
     }
 }
 result eval_result(const vector<Landmarks>& predictions,
-                  const vector<Landmarks>& gts,
-                  const vector<std::string>& names) {
+                  const vector<Landmarks>& gts) {
     result res;
     int precision_cor(0), precision_tot(0);
     int recall_cor(0), recall_tot(0);

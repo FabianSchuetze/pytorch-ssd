@@ -1,10 +1,11 @@
+#include "TS_SSDLiteCaller.hpp"
+
+#include <exception>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <string>
-#include "TS_SSDLiteCaller.hpp"
-#include <exception>
 using namespace cv;  // ugly - how to get COLOR_BGR2RGB?
 
 void TS_SSDLiteCaller::derserialize_model(const std::string& model_pth,
@@ -28,7 +29,7 @@ TS_SSDLiteCaller::TS_SSDLiteCaller(const std::string& model_pth,
 }
 
 void TS_SSDLiteCaller::predict(const cv::Mat& input,
-                               std::vector<PostProcessing::Landmark>& results) {
+                               std::vector<Landmark>& results) {
     cv::Mat image;
     cv::cvtColor(input, image, COLOR_BGR2RGB);
     int height = image.size().height;

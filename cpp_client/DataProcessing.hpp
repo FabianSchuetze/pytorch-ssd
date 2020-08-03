@@ -4,12 +4,17 @@
 
 #include <opencv2/core/core.hpp>
 
+// struct Landmark{
+// float x
+struct Landmark {
+    float xmin, xmax, ymin, ymax, confidence;
+    int label;
+};
+
+void serialize_results(const std::string&, const std::vector<Landmark>&);
+
 class PostProcessing {
    public:
-    struct Landmark {
-        float xmin, xmax, ymin, ymax, confidence;
-        int label;
-    };
     PostProcessing() = default;
     PostProcessing(const std::string&);
     std::vector<Landmark> process(const torch::Tensor& scores,

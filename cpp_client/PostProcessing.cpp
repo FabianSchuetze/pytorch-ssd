@@ -8,7 +8,7 @@
 #include "LoadConfig.hpp"
 
 using torch::Tensor;
-typedef std::vector<PostProcessing::Landmark> landmarks;
+typedef std::vector<Landmark> Landmarks;
 
 PostProcessing::PostProcessing(const std::string& config)
     : _num_classes(0),
@@ -46,10 +46,10 @@ void PostProcessing::print_arguments() {
               << std::endl;
 }
 
-landmarks PostProcessing::process(const Tensor& confidence,
+Landmarks PostProcessing::process(const Tensor& confidence,
                                   const Tensor& localization,
                                   const std::pair<float, float>& img_size) {
-    std::vector<PostProcessing::Landmark> results;
+    std::vector<Landmark> results;
     Tensor loc = localization.squeeze(0);
     Tensor conf = confidence.squeeze(0);
     for (int i = 1; i < _num_classes; ++i) {
@@ -72,7 +72,7 @@ landmarks PostProcessing::process(const Tensor& confidence,
 void PostProcessing::convert(int label, const Tensor& scores,
                              const Tensor& boxes,
                              const std::pair<float, float>& img_size,
-                             landmarks& results) {
+                             Landmarks& results) {
     int height = img_size.first;
     int width = img_size.second;
     for (int i = 0; i < scores.size(0); ++i) {
@@ -80,7 +80,7 @@ void PostProcessing::convert(int label, const Tensor& scores,
         float ymin = boxes[i][1].item<float>() * 300;
         float xmax = boxes[i][2].item<float>() * 300;
         float ymax = boxes[i][3].item<float>() * 300;
-        PostProcessing::Landmark l;
+        Landmark l;
         l.xmin = xmin;
         l.ymin = ymin;
         l.xmax = xmax;
@@ -89,4 +89,27 @@ void PostProcessing::convert(int label, const Tensor& scores,
         l.label = label;
         results.push_back(l);
     }
+}
+
+void serialize_results(const std::string& file, const Landmarks& result) {
+    std::ofstream myfile;
+    size_t pos = file.find_last_of("/");
+    std::string filename = file.substr(pos + 1);
+    size_t pos_end = filename.find(".");
+    std::string token = filename.substr(0, pos_end);
+    std::string outfile = "results/" + token + ".result";
+    myfile.open(outfile, std::ios::trunc);
+    if (myfile.fail()) {
+        std::cout << "couldnt open file: " << outfile << std::endl;
+    } else {
+        for (const Landmark& res : result) {
+            float xmin = res.xmin;
+            float ymin = res.ymin;
+            float xmax = res.xmax;
+            float ymax = res.ymax;
+            myfile << xmin << ", " << ymin << ", " << xmax << ", " << ymax
+                   << ", " << res.confidence << ", " << res.label << std::endl;
+        }
+    }
+    myfile.close();
 }

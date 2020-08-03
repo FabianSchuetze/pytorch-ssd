@@ -27,29 +27,29 @@ std::vector<std::string> load_images(const std::string& path) {
     return files;
 }
 
-void serialize_results(const std::string& file,
-                       const std::vector<PostProcessing::Landmark>& result) {
-    std::ofstream myfile;
-    size_t pos = file.find_last_of("/");
-    std::string filename = file.substr(pos + 1);
-    size_t pos_end = filename.find(".");
-    std::string token = filename.substr(0, pos_end);
-    std::string outfile = "results/" + token + ".result";
-    myfile.open(outfile, std::ios::trunc);
-    if (myfile.fail()) {
-        std::cout << "couldnt open file: " << outfile << std::endl;
-    } else {
-        for (const PostProcessing::Landmark& res : result) {
-            float xmin = res.xmin;
-            float ymin = res.ymin;
-            float xmax = res.xmax;
-            float ymax = res.ymax;
-            myfile << xmin << ", " << ymin << ", " << xmax << ", " << ymax
-                   << ", " << res.confidence << ", " << res.label << std::endl;
-        }
-    }
-    myfile.close();
-}
+//void serialize_results(const std::string& file,
+                       //const std::vector<PostProcessing::Landmark>& result) {
+    //std::ofstream myfile;
+    //size_t pos = file.find_last_of("/");
+    //std::string filename = file.substr(pos + 1);
+    //size_t pos_end = filename.find(".");
+    //std::string token = filename.substr(0, pos_end);
+    //std::string outfile = "results/" + token + ".result";
+    //myfile.open(outfile, std::ios::trunc);
+    //if (myfile.fail()) {
+        //std::cout << "couldnt open file: " << outfile << std::endl;
+    //} else {
+        //for (const PostProcessing::Landmark& res : result) {
+            //float xmin = res.xmin;
+            //float ymin = res.ymin;
+            //float xmax = res.xmax;
+            //float ymax = res.ymax;
+            //myfile << xmin << ", " << ymin << ", " << xmax << ", " << ymax
+                   //<< ", " << res.confidence << ", " << res.label << std::endl;
+        //}
+    //}
+    //myfile.close();
+//}
 
 int main(int argc, const char* argv[]) {
     if (argc != 4) {
@@ -71,7 +71,7 @@ int main(int argc, const char* argv[]) {
             std::cout << "couldnt read img " << img << "; continue\n ";
             continue;
         }
-        std::vector<PostProcessing::Landmark> result;
+        std::vector<Landmark> result;
         auto start = std::chrono::high_resolution_clock::now();
         SSDLite.predict(tmp, result);
         auto stop = std::chrono::high_resolution_clock::now();

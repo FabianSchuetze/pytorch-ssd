@@ -8,7 +8,7 @@
 class Database{
 
     public:
-        using iterator = std::pair<std::string, std::vector<PostProcessing::Landmark>>;
+        using iterator = std::pair<std::string, std::vector<Landmark>>;
         //using const_iterator = const std::vector<PostProcessing::Landmark>&;
         Database(const std::string&);
 
@@ -25,7 +25,7 @@ class Database{
         //tinyxml2::XMLElement* end_database;
         //tinyxml2::XMLElement* position;
         std::map<std::string, int> transform;
-        PostProcessing::Landmark get_box(tinyxml2::XMLElement*);
+        Landmark get_box(tinyxml2::XMLElement*);
         void init_database(const std::string&);
         void init_transform();
         iterator get_gts(tinyxml2::XMLElement*);

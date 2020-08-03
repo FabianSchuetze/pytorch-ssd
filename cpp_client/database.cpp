@@ -34,8 +34,8 @@ void Database::init_transform() {
     transform["nose_tip"] = 4;
 };
 
-PostProcessing::Landmark Database::get_box(tinyxml2::XMLElement* box) {
-    PostProcessing::Landmark landmark;
+Landmark Database::get_box(tinyxml2::XMLElement* box) {
+    Landmark landmark;
     float xmin = std::stof(box->Attribute("left"));
     float xmax = xmin + std::stof(box->Attribute("width"));
     float ymin = std::stof(box->Attribute("top"));
@@ -50,7 +50,7 @@ PostProcessing::Landmark Database::get_box(tinyxml2::XMLElement* box) {
 }
 
 Database::iterator Database::get_gts(tinyxml2::XMLElement* pos) {
-    std::pair<std::string, std::vector<PostProcessing::Landmark>> gts;
+    std::pair<std::string, std::vector<Landmark>> gts;
     for (tinyxml2::XMLElement* box = pos->FirstChildElement(); box != NULL;
          box = box->NextSiblingElement()) {
         gts.second.push_back(get_box(box));

@@ -25,7 +25,7 @@ class TS_SSDLiteCaller {
    public:
     TS_SSDLiteCaller() = delete;
     TS_SSDLiteCaller(const std::string&, const std::string&);
-    void predict(const cv::Mat&, std::vector<PostProcessing::Landmark>&);
+    void predict(const cv::Mat&, std::vector<Landmark>&);
 
    private:
     void derserialize_model(const std::string&, const std::string&);

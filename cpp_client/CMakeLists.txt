@@ -37,7 +37,4 @@ target_compile_options(${LIBRARY_TARGET_NAME} PUBLIC)
 add_executable(example-app main.cpp)
 target_link_libraries(example-app  PUBLIC Faces "${TORCH_LIBRARIES}" TorchVision::TorchVision ${OpenCV_LIBS})
 set_property(TARGET example-app PROPERTY CXX_STANDARD 17)
-add_executable(read-app load_database.cpp)
-target_link_libraries(read-app  PUBLIC Faces "${TORCH_LIBRARIES}" TorchVision::TorchVision ${OpenCV_LIBS})
-
 add_subdirectory(tests)
