@@ -2,7 +2,7 @@
 #include <opencv2/highgui/highgui.hpp>
 
 #include "DataProcessing.hpp"
-#include "LoadConfig.hpp"
+//#include "LoadConfig.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 
 using namespace cv;

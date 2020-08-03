@@ -6,7 +6,7 @@ find_package(Torch REQUIRED)
 find_package(Python REQUIRED)
 find_package(PythonLibs REQUIRED)
 find_package(TorchVision REQUIRED)
-find_package( OpenCV REQUIRED )
+find_package(OpenCV REQUIRED)
 find_package(GTest REQUIRED)
 
 include_directories(${PYTHON_INCLUDE_DIRS})
@@ -23,7 +23,6 @@ set(${LIBRARY_TARGET_NAME}_SRC
 set(${LIBRARY_TARGET_NAME}_HDR
     DataProcessing.hpp
     TS_SSDLiteCaller.hpp
-    Database.hpp
     tinyxml2.h
     Evaluate.hpp
 )

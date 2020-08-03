@@ -4,14 +4,18 @@
 
 #include <opencv2/core/core.hpp>
 
-// struct Landmark{
-// float x
 struct Landmark {
     float xmin, xmax, ymin, ymax, confidence;
     int label;
 };
 
 void serialize_results(const std::string&, const std::vector<Landmark>&);
+
+struct kv_pair : public std::pair<std::string, std::string> {
+    friend std::istream& operator>>(std::istream& in, kv_pair& p) {
+        return in >> std::get<0>(p) >> std::get<1>(p);
+    }
+};
 
 class PostProcessing {
    public:
@@ -28,7 +32,6 @@ class PostProcessing {
 
     int _num_classes, _bkg_label;
     float _conf_thresh, _nms_thresh;
-    std::vector<float> _variances;
 };
 
 class PreProcessing {

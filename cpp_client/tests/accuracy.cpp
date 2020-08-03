@@ -46,20 +46,20 @@ TEST(MYTEST, Accuracy) {
             std::cout << "couldnt read img " << img.first << "; continue\n ";
             continue;
         }
-        std::vector<Landmark> result;
+        std::vector<Landmark> landmarks;
         auto start = std::chrono::high_resolution_clock::now();
-        SSDLite.predict(tmp, result);
+        SSDLite.predict(tmp, landmarks);
         auto stop = std::chrono::high_resolution_clock::now();
         auto duration =
             std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
         total_durations += duration.count();
-        predictions.push_back(result);
+        predictions.push_back(landmarks);
         gts.push_back(img.second);
         count++;
     }
     float fps = (float) count / (total_durations / 1000);
-    result res = eval_result(predictions, gts);
     ASSERT_GT(fps, 30); // Conversative, should exceed 70 on most hardware
+    result res = eval_result(predictions, gts);
     ASSERT_GT(res.precision, 0.8);
     ASSERT_GT(res.recall, 0.8);
 

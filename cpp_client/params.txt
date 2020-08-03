@@ -2,6 +2,4 @@ num_classes 5
 bkg_label 0
 conf_thresh 0.5
 nms_thresh 0.3
-variance_0 0.1
-variance_1 0.2
 size 300

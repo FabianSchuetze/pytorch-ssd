@@ -5,17 +5,13 @@
 #include <fstream>
 
 #include "DataProcessing.hpp"
-#include "LoadConfig.hpp"
+//#include "LoadConfig.hpp"
 
 using torch::Tensor;
 typedef std::vector<Landmark> Landmarks;
 
 PostProcessing::PostProcessing(const std::string& config)
-    : _num_classes(0),
-      _bkg_label(0),
-      _conf_thresh(0),
-      _nms_thresh(0),
-      _variances(2) {
+    : _num_classes(0), _bkg_label(0), _conf_thresh(0), _nms_thresh(0) {
     std::ifstream paramFile{config};
     if (paramFile.fail()) {
         std::string m("Cannot load config at: " + config + ", thrown from:\n");
@@ -28,8 +24,6 @@ PostProcessing::PostProcessing(const std::string& config)
     _bkg_label = std::stoi(params.at("bkg_label"));
     _conf_thresh = std::stof(params.at("conf_thresh"));
     _nms_thresh = std::stof(params.at("nms_thresh"));
-    _variances[0] = std::stof(params.at("variance_0"));
-    _variances[1] = std::stof(params.at("variance_1"));
     print_arguments();
 
     ;
@@ -41,9 +35,7 @@ void PostProcessing::print_arguments() {
               << "bgk_label: " << _bkg_label << std::endl
               << "conf_thresh: " << _conf_thresh << std::endl
               << "nms_thresh: " << _nms_thresh << std::endl
-              << " bgk_label: " << _bkg_label << std::endl
-              << " variance: " << _variances[0] << ", " << _variances[1]
-              << std::endl;
+              << " bgk_label: " << _bkg_label << std::endl;
 }
 
 Landmarks PostProcessing::process(const Tensor& confidence,
