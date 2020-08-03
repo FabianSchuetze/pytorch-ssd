@@ -26,6 +26,7 @@ set(${LIBRARY_TARGET_NAME}_HDR
     tinyxml2.h
     Evaluate.hpp
 )
+
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g3 -O0")
 if (UNIX)
   add_library(${LIBRARY_TARGET_NAME} SHARED ${${LIBRARY_TARGET_NAME}_SRC})
@@ -37,3 +38,4 @@ add_executable(example-app main.cpp)
 target_link_libraries(example-app  PUBLIC Faces "${TORCH_LIBRARIES}" TorchVision::TorchVision ${OpenCV_LIBS})
 set_property(TARGET example-app PROPERTY CXX_STANDARD 17)
 add_subdirectory(tests)
+enable_testing()

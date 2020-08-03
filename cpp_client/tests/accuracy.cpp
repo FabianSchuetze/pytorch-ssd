@@ -1,4 +1,5 @@
 #include <ATen/core/ivalue.h>
+#include <opencv2/core/types.hpp>
 #include <torch/script.h>  // One-stop header.
 #include <torch/torch.h>
 
@@ -12,6 +13,7 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <gtest/gtest.h>
+#include <vector>
 
 #include "../DataProcessing.hpp"
 #include "../Database.hpp"
@@ -20,6 +22,34 @@
 
 using namespace cv;
 using namespace std::chrono;
+
+cv::Mat load_image(const std::string file) {
+    cv::Mat tmp;
+    try {
+        tmp = cv::imread(file, cv::IMREAD_COLOR);
+    } catch (...) {
+        std::cout << "couldnt read img " << file << "; continue\n ";
+    }
+    return tmp;
+}
+
+
+void insert_rectangle(cv::Mat& tmp, const std::vector<Landmark>& landmarks,
+                      const cv::Scalar& color) {
+    for (const Landmark& landmark: landmarks)
+        rectangle(tmp, Point(landmark.xmin, landmark.ymin),
+                       Point(landmark.xmax, landmark.ymax), color);
+}
+void plot_image(cv::Mat tmp, const std::vector<Landmark>& predictions,
+                const std::vector<Landmark>& gts) {
+    namedWindow( "Display window", WINDOW_AUTOSIZE );
+    cv::Scalar green = cv::Scalar(0, 128, 0);
+    cv::Scalar red = cv::Scalar(0, 0, 255);
+    insert_rectangle(tmp, predictions, green);
+    insert_rectangle(tmp, gts, red);
+    imshow( "Display window", tmp);
+    waitKey(0);
+}
 
 TEST(MYTEST, Accuracy) {
     std::string root = "/home/fabian/Documents/work/github/pytorch-ssd/";
@@ -35,13 +65,7 @@ TEST(MYTEST, Accuracy) {
     std::vector<std::vector<Landmark>> gts, predictions;
     while (count < database.length) {
         auto img = database.get_element();
-        cv::Mat tmp;
-        try {
-            tmp = cv::imread(img.first, cv::IMREAD_COLOR);
-        } catch (...) {
-            std::cout << "couldnt read img " << img.first << "; continue\n ";
-            continue;
-        }
+        cv::Mat tmp = load_image(img.first);
         if (!tmp.data) {
             std::cout << "couldnt read img " << img.first << "; continue\n ";
             continue;
@@ -55,6 +79,7 @@ TEST(MYTEST, Accuracy) {
         total_durations += duration.count();
         predictions.push_back(landmarks);
         gts.push_back(img.second);
+        plot_image(tmp, landmarks, img.second);
         count++;
     }
     float fps = (float) count / (total_durations / 1000);
