@@ -10,6 +10,7 @@ find_package(OpenCV REQUIRED)
 find_package(GTest REQUIRED)
 
 include_directories(${PYTHON_INCLUDE_DIRS})
+include_directories(${GTEST_INCLUDE_DIRS})
 
 set(${LIBRARY_TARGET_NAME}_SRC
     PostProcessing.cpp
@@ -29,9 +30,9 @@ set(${LIBRARY_TARGET_NAME}_HDR
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-arcs -ftest-coverage\
     -coverage -g -fPIC -O0")
-if (UNIX)
-  add_library(${LIBRARY_TARGET_NAME} SHARED ${${LIBRARY_TARGET_NAME}_SRC})
-endif(UNIX)
+#if (UNIX)
+add_library(${LIBRARY_TARGET_NAME} SHARED ${${LIBRARY_TARGET_NAME}_SRC})
+#endif(UNIX)
 target_link_libraries(${LIBRARY_TARGET_NAME} PUBLIC "${TORCH_LIBRARIES}" TorchVision::TorchVision ${PYTHON_LIBRARIES} ${OpenCV_LIBS})
 target_compile_options(${LIBRARY_TARGET_NAME} PUBLIC)
 

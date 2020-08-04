@@ -11,7 +11,11 @@ PreProcessing::PreProcessing(const std::string& config) : _size(0) {
     if (paramFile.fail()) {
         std::cout << "inside the fail part" << std::endl;
         std::string m("Cannot load config at: " + config + ", thrown from:\n");
+#ifdef __linux__
         throw std::runtime_error(m + __PRETTY_FUNCTION__);
+#elif _WIN32
+        throw std::runtime_error(m + __FUNCSIG__);
+#endif
     }
     std::map<std::string, std::string> params{
         std::istream_iterator<kv_pair>{paramFile},
