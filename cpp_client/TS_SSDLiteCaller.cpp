@@ -13,11 +13,11 @@ void TS_SSDLiteCaller::derserialize_model(const std::string& model_pth,
     try {
         model = torch::jit::load(model_pth);
     } catch (const std::exception& e) {
-        std::cout << "inside expcetion " << std::endl;
         std::cout << e.what() << std::endl;
     }
     torch::Device device(torch::kCPU);
     model.to(device);  // put it on CPU
+    std::cout << config << std::endl;
     preprocess = PreProcessing(config);
     detection = PostProcessing(config);
 }

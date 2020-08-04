@@ -27,8 +27,8 @@ set(${LIBRARY_TARGET_NAME}_HDR
     Evaluate.hpp
 )
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-arcs -ftest-coverage -g\
-    -fPIC -O0 -coverage -fno-inline -fno-inline-small-functions -fno-default-inline")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-arcs -ftest-coverage\
+    -coverage -g -fPIC -O0")
 if (UNIX)
   add_library(${LIBRARY_TARGET_NAME} SHARED ${${LIBRARY_TARGET_NAME}_SRC})
 endif(UNIX)

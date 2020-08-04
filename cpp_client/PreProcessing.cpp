@@ -7,7 +7,9 @@
 using namespace cv;
 PreProcessing::PreProcessing(const std::string& config) : _size(0) {
     std::ifstream paramFile{config};
+    std::cout << "inside the constructor" << std::endl;
     if (paramFile.fail()) {
+        std::cout << "inside the fail part" << std::endl;
         std::string m("Cannot load config at: " + config + ", thrown from:\n");
         throw std::runtime_error(m + __PRETTY_FUNCTION__);
     }

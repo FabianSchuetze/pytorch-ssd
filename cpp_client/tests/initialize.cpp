@@ -15,7 +15,6 @@
 #include "../TS_SSDLiteCaller.hpp"
 
 TEST(INIT, LoadConfig) {
-    std::cout << "begin test" << std::endl;
     std::string root = "/home/fabian/Documents/work/github/pytorch-ssd/";
     std::string model = root + "traced_quantized.pt";
     std::string wrong_location = root + "params.txt";
@@ -23,6 +22,16 @@ TEST(INIT, LoadConfig) {
                  std::runtime_error);
     std::string correct_location = root + "cpp_client/params.txt";
     ASSERT_NO_THROW(TS_SSDLiteCaller SSDLite(model, correct_location));
+}
+
+TEST(INIT, LoadModel) {
+    std::string root = "/home/fabian/Documents/work/github/pytorch-ssd/";
+    std::string wrong_model = root + "does_not_exists.pt";
+    std::string location = root + "cpp_client/params.txt";
+    ASSERT_ANY_THROW(TS_SSDLiteCaller SSDLite(wrong_model, location));
+                 //std::runtime_error);
+    std::string model = root + "traced_quantized.pt";
+    ASSERT_NO_THROW(TS_SSDLiteCaller SSDLite(model, location));
 }
 
 TEST(INIT, LoadDataBase) {
