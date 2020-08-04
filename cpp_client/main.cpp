@@ -27,6 +27,16 @@ std::vector<std::string> load_images(const std::string& path) {
     return files;
 }
 
+cv::Mat load_image(const std::string file) {
+    cv::Mat tmp;
+    try {
+        tmp = cv::imread(file, cv::IMREAD_COLOR);
+    } catch (...) {
+        std::cout << "couldnt read img " << file << "; continue\n ";
+    }
+    return tmp;
+}
+
 int main(int argc, const char* argv[]) {
     if (argc != 4) {
         std::cerr << "usage: example-app <path-to-exported-script-module> "
@@ -40,13 +50,7 @@ int main(int argc, const char* argv[]) {
     int count(0);
     float total_durations(0.);
     for (const std::string& img : files) {
-        cv::Mat tmp;
-        try {
-            tmp = cv::imread(img, cv::IMREAD_COLOR);
-        } catch (...) {
-            std::cout << "couldnt read img " << img << "; continue\n ";
-            continue;
-        }
+        cv::Mat tmp = load_image(img);
         if (!tmp.data) {
             std::cout << "couldnt read img " << img << "; continue\n ";
             continue;

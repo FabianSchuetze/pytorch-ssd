@@ -79,7 +79,7 @@ TEST(MYTEST, Accuracy) {
         total_durations += duration.count();
         predictions.push_back(landmarks);
         gts.push_back(img.second);
-        plot_image(tmp, landmarks, img.second);
+        //plot_image(tmp, landmarks, img.second);
         count++;
     }
     float fps = (float) count / (total_durations / 1000);

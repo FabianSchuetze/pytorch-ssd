@@ -5,6 +5,8 @@ set(${LIBRARY_TARGET_NAME}_TEST
 )
 
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -fprofile-arcs -ftest-coverage -g -O0\
+    -coverage -fno-inline -fno-inline-small-functions -fno-default-inline")
 enable_testing()
 foreach( testsourcefile ${${LIBRARY_TARGET_NAME}_TEST} )
     string( REPLACE ".cpp" "" testname ${testsourcefile} )

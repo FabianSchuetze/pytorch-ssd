@@ -26,12 +26,15 @@ def convert_gt_box(gt):
     """
     # height, width = 256, 320
     height, width = 300, 300
-    boxes = gt[:, :4]
-    boxes[:, 0] *= height
-    boxes[:, 2] *= width
-    boxes[:, 1] *= height
-    boxes[:, 3] *= width
-    boxes = np.array(boxes[:, [1, 0, 3, 2]])
+    if len(gt) > 0:
+        boxes = gt[:, :4]
+        boxes[:, 0] *= height
+        boxes[:, 2] *= width
+        boxes[:, 1] *= height
+        boxes[:, 3] *= width
+        boxes = np.array(boxes[:, [1, 0, 3, 2]])
+    else:
+        boxes = np.array([])
     return boxes
 
 
@@ -211,6 +214,6 @@ if __name__ == '__main__':
     PREDICTOR = load_net(ARGS, DEVICE)
     PREDICTOR.filter_threshold = 0.5
     PREDICTIONS, GTS, IMAGES = obtain_results(ARGS, DEVICE, DATASET, PREDICTOR)
-    # plot_images(IMAGES, PREDICTIONS, serialize=False)
+    plot_images(IMAGES, PREDICTIONS, serialize=False)
     RES = eval_boxes(PREDICTIONS, GTS)[0]
     print(RES['coco_eval'].__str__())
