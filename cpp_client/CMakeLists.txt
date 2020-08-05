@@ -8,6 +8,7 @@ find_package(PythonLibs REQUIRED)
 find_package(TorchVision REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(GTest REQUIRED)
+find_package(tinyxml2 REQUIRED)
 
 include_directories(${PYTHON_INCLUDE_DIRS})
 include_directories(${GTEST_INCLUDE_DIRS})
@@ -17,14 +18,12 @@ set(${LIBRARY_TARGET_NAME}_SRC
     PreProcessing.cpp
     TS_SSDLiteCaller.cpp
     database.cpp
-    tinyxml2.cpp
     evaluate.cpp
 )
 
 set(${LIBRARY_TARGET_NAME}_HDR
     DataProcessing.hpp
     TS_SSDLiteCaller.hpp
-    tinyxml2.h
     Evaluate.hpp
 )
 
@@ -33,7 +32,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-arcs -ftest-coverage\
 #if (UNIX)
 add_library(${LIBRARY_TARGET_NAME} SHARED ${${LIBRARY_TARGET_NAME}_SRC})
 #endif(UNIX)
-target_link_libraries(${LIBRARY_TARGET_NAME} PUBLIC "${TORCH_LIBRARIES}" TorchVision::TorchVision ${PYTHON_LIBRARIES} ${OpenCV_LIBS})
+target_link_libraries(${LIBRARY_TARGET_NAME} PUBLIC "${TORCH_LIBRARIES}"
+    TorchVision::TorchVision ${PYTHON_LIBRARIES} ${OpenCV_LIBS} tinyxml2)
 target_compile_options(${LIBRARY_TARGET_NAME} PUBLIC)
 
 add_executable(example-app main.cpp)

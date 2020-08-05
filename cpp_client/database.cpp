@@ -3,9 +3,7 @@
 #include <map>
 #include <memory>
 #include <stdexcept>
-
-#include "/home/fabian/Documents/work/github/tinyxml2/tinyxml2.h"
-#include "tinyxml2.h"
+#include <tinyxml2.h>
 
 Database::Database(const std::string& location)
     : length(0), doc(), position(0) {
