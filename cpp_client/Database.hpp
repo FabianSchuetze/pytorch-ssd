@@ -1,5 +1,17 @@
 #ifndef database_hpp
 #define database_hpp
+
+#ifdef _WIN32
+#    ifdef LIBRARY_EXPORTS
+#        define LIBRARY_API __declspec(dllexport)
+#    else
+#        define LIBRARY_API __declspec(dllimport)
+#    endif
+#elif
+#    define LIBRARY_API
+#endif
+
+
 #include "DataProcessing.hpp"
 #include "tinyxml2.h"
 #include <memory>
@@ -10,9 +22,9 @@ class Database{
     public:
         using iterator = std::pair<std::string, std::vector<Landmark>>;
         //using const_iterator = const std::vector<PostProcessing::Landmark>&;
-        Database(const std::string&);
+        LIBRARY_API Database(const std::string&);
 
-        iterator get_element();
+        LIBRARY_API iterator get_element();
         int length;
         //iterator end();
         //iterator operator++(int);

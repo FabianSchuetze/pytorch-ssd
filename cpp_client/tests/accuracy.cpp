@@ -1,4 +1,5 @@
 #include <ATen/core/ivalue.h>
+#include <gtest/gtest.h>
 #include <opencv2/core/types.hpp>
 #include <torch/script.h>  // One-stop header.
 #include <torch/torch.h>
@@ -12,7 +13,6 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
-#include <gtest/gtest.h>
 #include <vector>
 
 #include "../DataProcessing.hpp"

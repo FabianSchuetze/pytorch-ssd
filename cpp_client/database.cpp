@@ -4,7 +4,6 @@
 #include <memory>
 #include <stdexcept>
 
-#include "/home/fabian/Documents/work/github/tinyxml2/tinyxml2.h"
 #include "tinyxml2.h"
 
 Database::Database(const std::string& location)
@@ -17,7 +16,11 @@ void Database::init_database(const std::string& location) {
     tinyxml2::XMLError res = doc.LoadFile(location.c_str());
     if (res != tinyxml2::XML_SUCCESS) {
         std::string m("Cannot parse file, at " + location + ", thrown from:\n");
+#ifdef __linux__
         throw std::runtime_error(m + __PRETTY_FUNCTION__);
+#elif _WIN32
+        throw std::runtime_error(m + __FUNCSIG__);
+#endif
     }
     tinyxml2::XMLElement* root =
         doc.FirstChildElement("dataset")->FirstChildElement("images");

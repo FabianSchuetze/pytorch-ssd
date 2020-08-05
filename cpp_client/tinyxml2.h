@@ -24,6 +24,16 @@ distribution.
 #ifndef TINYXML2_INCLUDED
 #define TINYXML2_INCLUDED
 
+#ifdef _WIN32
+#    ifdef LIBRARY_EXPORTS
+#        define LIBRARY_API __declspec(dllexport)
+#    else
+#        define LIBRARY_API __declspec(dllimport)
+#    endif
+#elif
+#    define LIBRARY_API
+#endif
+
 #if defined(ANDROID_NDK) || defined(__BORLANDC__) || defined(__QNXNTO__)
 #   include <ctype.h>
 #   include <limits.h>
@@ -1725,7 +1735,7 @@ class TINYXML2_LIB XMLDocument : public XMLNode
 public:
     /// constructor
     XMLDocument( bool processEntities = true, Whitespace whitespaceMode = PRESERVE_WHITESPACE );
-    ~XMLDocument();
+    LIBRARY_API ~XMLDocument();
 
     virtual XMLDocument* ToDocument()				{
         TIXMLASSERT( this == _document );
