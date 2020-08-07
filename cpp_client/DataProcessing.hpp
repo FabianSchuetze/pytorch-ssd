@@ -1,16 +1,8 @@
 #ifndef data_processing_hpp
 #define data_processing_hpp
+#define LIBRARY_EXPORTS
 
-#ifdef _WIN32
-#    ifdef LIBRARY_EXPORTS
-#        define LIBRARY_API __declspec(dllexport)
-#    else
-#        define LIBRARY_API __declspec(dllimport)
-#    endif
-#elif
-#    define LIBRARY_API
-#endif
-
+#include "Export.hpp"
 #include <torch/script.h>  // One-stop header.
 
 #include <opencv2/core/core.hpp>

@@ -1,4 +1,5 @@
 #include "Database.hpp"
+#include "Export.hpp"
 
 #include <map>
 #include <memory>

@@ -1,4 +1,5 @@
 #include "TS_SSDLiteCaller.hpp"
+#include "Export.hpp"
 
 #include <exception>
 #include <opencv2/core/core.hpp>
