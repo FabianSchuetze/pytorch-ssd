@@ -1,0 +1,2 @@
+root C:\\Users\\fs\\pytorch-ssd\\
+database C:\\Users\\fs\\Documents\\CrossCalibration\\TCLObjectDetectionDatabase\\greyscale_test.xml;

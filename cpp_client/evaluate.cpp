@@ -1,4 +1,5 @@
 #include "Evaluate.hpp"
+#include "Export.hpp"
 
 #include <algorithm>
 #include <stdexcept>

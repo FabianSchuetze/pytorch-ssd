@@ -22,7 +22,7 @@ using namespace std::chrono;
 std::vector<std::string> load_images(const std::string& path) {
     std::vector<std::string> files;
     for (const auto& img : fs::recursive_directory_iterator(path)) {
-        files.push_back(img.path());
+        files.push_back(img.path().string());
     }
     return files;
 }

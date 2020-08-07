@@ -1,4 +1,5 @@
 #include <ATen/core/ivalue.h>
+#include <gtest/gtest.h>
 #include <opencv2/core/types.hpp>
 #include <torch/script.h>  // One-stop header.
 #include <torch/torch.h>
@@ -12,7 +13,6 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
-#include <gtest/gtest.h>
 #include <vector>
 
 #include "../DataProcessing.hpp"
@@ -52,12 +52,10 @@ void plot_image(cv::Mat tmp, const std::vector<Landmark>& predictions,
 }
 
 TEST(MYTEST, Accuracy) {
-    std::string root = "/home/fabian/Documents/work/github/pytorch-ssd/";
-    std::string model = root + "traced_quantized.pt";
+    std::string root = "C:\\Users\\fs\\pytorch-ssd\\";
+    std::string model = root + "traced_ssdlite.pt";
     std::string params = root + "cpp_client/params.txt";
-    std::string db =
-        "/home/fabian/data/TS/CrossCalibration/TCLObjectDetectionDatabase/"
-        "greyscale_test.xml";
+    std::string db = "C:\\Users\\fs\\Documents\\CrossCalibration\\TCLObjectDetectionDatabase\\greyscale.xml";
     TS_SSDLiteCaller SSDLite(model, params);
     Database database(db);
     int count(0);

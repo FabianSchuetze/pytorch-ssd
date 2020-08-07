@@ -1,5 +1,8 @@
 #ifndef data_processing_hpp
 #define data_processing_hpp
+#define LIBRARY_EXPORTS
+
+#include "Export.hpp"
 #include <torch/script.h>  // One-stop header.
 
 #include <opencv2/core/core.hpp>
@@ -9,7 +12,7 @@ struct Landmark {
     int label;
 };
 
-void serialize_results(const std::string&, const std::vector<Landmark>&);
+LIBRARY_API void serialize_results(const std::string&, const std::vector<Landmark>&);
 
 struct kv_pair : public std::pair<std::string, std::string> {
     friend std::istream& operator>>(std::istream& in, kv_pair& p) {
